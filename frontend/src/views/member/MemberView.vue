@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 import { personsApi } from '@/services/api'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import LoyaltyCard from '@/components/loyalty/LoyaltyCard.vue'
 
 const router = useRouter()
 const personsStore = usePersonsStore()
@@ -18,6 +19,11 @@ const sessionsLoading = ref(false)
 const sessionsPagination = ref({ page: 1, total: 0, pages: 0 })
 
 const persons = computed(() => personsStore.persons)
+
+// Vérifie si l'utilisateur est un particulier (éligible fidélité)
+const isPersonalClient = computed(() => {
+  return authStore.user?.client_type === 'personal'
+})
 
 const selectedPerson = computed(() => {
   if (!selectedPersonId.value) return null
@@ -127,6 +133,11 @@ async function handleLogout() {
     </header>
 
     <main class="max-w-4xl mx-auto p-4">
+      <!-- Carte de fidélité (particuliers uniquement) -->
+      <div v-if="isPersonalClient" class="mb-6">
+        <LoyaltyCard :user-id="authStore.user.id" />
+      </div>
+
       <LoadingSpinner v-if="loading" size="lg" class="py-12" />
 
       <template v-else>

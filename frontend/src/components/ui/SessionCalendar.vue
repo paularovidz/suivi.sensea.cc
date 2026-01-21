@@ -2,7 +2,12 @@
 import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
+  // Legacy prop - kept for backward compatibility but no longer used
   data: {
+    type: Object,
+    default: () => ({})
+  },
+  bookingsData: {
     type: Object,
     default: () => ({})
   },
@@ -41,14 +46,14 @@ const calendarDays = computed(() => {
 
   // Add empty cells for days before the first of the month
   for (let i = 0; i < startDayOfWeek; i++) {
-    result.push({ day: null, count: 0 })
+    result.push({ day: null, bookingCount: 0 })
   }
 
-  // Add days of the month
+  // Add days of the month - only count bookings, not sessions
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    const count = props.data[dateStr] || 0
-    result.push({ day, count, date: dateStr })
+    const bookingCount = props.bookingsData[dateStr] || 0
+    result.push({ day, bookingCount, date: dateStr })
   }
 
   return result
@@ -59,12 +64,24 @@ const today = computed(() => {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 })
 
-function getIntensityClass(count) {
+// Check if there are any bookings in the current month
+const hasBookings = computed(() => {
+  return Object.keys(props.bookingsData).length > 0
+})
+
+function getBackgroundClass(cell) {
+  const count = cell.bookingCount
   if (count === 0) return 'bg-gray-50'
-  if (count === 1) return 'bg-gray-200'
-  if (count <= 3) return 'bg-primary-200'
-  if (count <= 5) return 'bg-primary-400'
-  return 'bg-primary-600 text-white'
+  if (count === 1) return 'bg-amber-100'
+  if (count === 2) return 'bg-amber-200'
+  if (count <= 3) return 'bg-amber-300'
+  if (count <= 5) return 'bg-amber-400'
+  return 'bg-amber-500'
+}
+
+function getTextClass(cell) {
+  const count = cell.bookingCount
+  return count > 4 ? 'text-white' : 'text-gray-700'
 }
 
 function prevMonth() {
@@ -118,26 +135,35 @@ function nextMonth() {
         v-for="(cell, index) in calendarDays"
         :key="index"
         :class="[
-          'aspect-square flex items-center justify-center text-sm rounded-lg transition-colors',
-          cell.day ? getIntensityClass(cell.count) : '',
-          cell.date === today ? 'ring-2 ring-primary-500' : ''
+          'aspect-square flex flex-col items-center justify-center text-sm rounded-lg transition-colors relative',
+          cell.day ? getBackgroundClass(cell) : '',
+          cell.date === today ? 'ring-2 ring-amber-500' : ''
         ]"
+        :title="cell.day && cell.bookingCount > 0 ? `${cell.bookingCount} RDV` : ''"
       >
-        <span v-if="cell.day" :class="cell.count > 5 ? 'text-white' : 'text-gray-700'">
+        <span v-if="cell.day" :class="getTextClass(cell)">
           {{ cell.day }}
         </span>
+        <!-- Indicator for bookings count -->
+        <div v-if="cell.day && cell.bookingCount > 0" class="text-[10px] font-medium" :class="getTextClass(cell)">
+          {{ cell.bookingCount }}
+        </div>
       </div>
     </div>
 
     <!-- Legend -->
-    <div class="flex items-center justify-center gap-2 mt-4 text-xs text-gray-500">
-      <span>Moins</span>
-      <div class="w-4 h-4 rounded bg-gray-50 border border-gray-200"></div>
-      <div class="w-4 h-4 rounded bg-gray-200"></div>
-      <div class="w-4 h-4 rounded bg-primary-200"></div>
-      <div class="w-4 h-4 rounded bg-primary-400"></div>
-      <div class="w-4 h-4 rounded bg-primary-600"></div>
-      <span>Plus</span>
+    <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-4 text-xs text-gray-500">
+      <div class="flex items-center gap-1">
+        <span>0</span>
+        <div class="w-4 h-4 rounded bg-gray-50 border border-gray-200"></div>
+        <div class="w-4 h-4 rounded bg-amber-100"></div>
+        <div class="w-4 h-4 rounded bg-amber-200"></div>
+        <div class="w-4 h-4 rounded bg-amber-300"></div>
+        <div class="w-4 h-4 rounded bg-amber-400"></div>
+        <div class="w-4 h-4 rounded bg-amber-500"></div>
+        <span>5+</span>
+      </div>
+      <div class="text-gray-400">Nombre de RDV par jour</div>
     </div>
   </div>
 </template>

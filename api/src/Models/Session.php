@@ -214,13 +214,15 @@ class Session
                 behavior_start, proposal_origin, attitude_start,
                 position, communication,
                 session_end, behavior_end, wants_to_return,
-                professional_notes, person_expression, next_session_proposals
+                professional_notes, person_expression, next_session_proposals,
+                is_invoiced, is_paid, is_free_session
             ) VALUES (
                 :id, :person_id, :created_by, :session_date, :duration_minutes, :sessions_per_month,
                 :behavior_start, :proposal_origin, :attitude_start,
                 :position, :communication,
                 :session_end, :behavior_end, :wants_to_return,
-                :professional_notes, :person_expression, :next_session_proposals
+                :professional_notes, :person_expression, :next_session_proposals,
+                :is_invoiced, :is_paid, :is_free_session
             )
         ');
 
@@ -249,7 +251,10 @@ class Session
             'wants_to_return' => $wantsToReturn,
             'professional_notes' => Encryption::encrypt($data['professional_notes'] ?? null),
             'person_expression' => Encryption::encrypt($data['person_expression'] ?? null),
-            'next_session_proposals' => Encryption::encrypt($data['next_session_proposals'] ?? null)
+            'next_session_proposals' => Encryption::encrypt($data['next_session_proposals'] ?? null),
+            'is_invoiced' => ($data['is_invoiced'] ?? false) ? 1 : 0,
+            'is_paid' => ($data['is_paid'] ?? false) ? 1 : 0,
+            'is_free_session' => ($data['is_free_session'] ?? false) ? 1 : 0
         ]);
 
         // Add proposals if provided
@@ -272,7 +277,8 @@ class Session
             'behavior_start', 'proposal_origin', 'attitude_start',
             'position', 'communication',
             'session_end', 'behavior_end', 'wants_to_return',
-            'professional_notes', 'person_expression', 'next_session_proposals'
+            'professional_notes', 'person_expression', 'next_session_proposals',
+            'is_invoiced', 'is_paid', 'is_free_session'
         ];
 
         foreach ($allowedFields as $field) {
@@ -294,6 +300,9 @@ class Session
                 } elseif (in_array($field, ['behavior_start', 'proposal_origin', 'attitude_start', 'position', 'session_end', 'behavior_end'])) {
                     // Convert empty strings to null for ENUM fields
                     $value = !empty($value) ? $value : null;
+                } elseif (in_array($field, ['is_invoiced', 'is_paid', 'is_free_session'])) {
+                    // Convert to integer for MySQL TINYINT
+                    $value = $value ? 1 : 0;
                 }
 
                 $params[$field] = $value;

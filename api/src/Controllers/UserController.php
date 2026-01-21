@@ -6,6 +6,8 @@ namespace App\Controllers;
 
 use App\Models\User;
 use App\Models\Person;
+use App\Models\LoyaltyCard;
+use App\Models\Setting;
 use App\Middleware\AuthMiddleware;
 use App\Services\AuditService;
 use App\Utils\Response;
@@ -264,5 +266,40 @@ class UserController
         );
 
         Response::success(null, 'Assignation retirée');
+    }
+
+    /**
+     * Récupère la carte de fidélité d'un utilisateur
+     */
+    public function getLoyaltyCard(string $id): void
+    {
+        AuthMiddleware::handle();
+
+        $currentUser = AuthMiddleware::getCurrentUser();
+        $isAdmin = AuthMiddleware::isAdmin();
+
+        // Les membres ne peuvent voir que leur propre carte de fidélité
+        if (!$isAdmin && $currentUser['id'] !== $id) {
+            Response::forbidden('Accès non autorisé');
+        }
+
+        $user = User::findById($id);
+        if (!$user) {
+            Response::notFound('Utilisateur non trouvé');
+        }
+
+        // Seuls les particuliers sont éligibles
+        if (!User::isPersonalClient($id)) {
+            Response::success([
+                'eligible' => false,
+                'reason' => 'Les associations ne sont pas éligibles au programme de fidélité'
+            ]);
+            return;
+        }
+
+        $sessionsRequired = Setting::getInteger('loyalty_sessions_required', 9);
+        $loyaltyInfo = LoyaltyCard::getWithProgress($id, $sessionsRequired);
+
+        Response::success($loyaltyInfo);
     }
 }

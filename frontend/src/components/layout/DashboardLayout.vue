@@ -10,6 +10,7 @@ const mobileMenuOpen = ref(false)
 const navigation = computed(() => {
   const items = [
     { name: 'Tableau de bord', href: '/app/dashboard', icon: 'dashboard' },
+    { name: 'Agenda', href: '/app/agenda', icon: 'agenda' },
     { name: 'Personnes', href: '/app/persons', icon: 'people' },
     { name: 'Séances', href: '/app/sessions', icon: 'calendar' },
     { name: 'Propositions', href: '/app/proposals', icon: 'lightbulb' }
@@ -17,6 +18,7 @@ const navigation = computed(() => {
 
   if (authStore.isAdmin) {
     items.push({ name: 'Utilisateurs', href: '/app/users', icon: 'users' })
+    items.push({ name: 'Paramètres', href: '/app/settings', icon: 'settings' })
   }
 
   return items

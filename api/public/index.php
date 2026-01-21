@@ -27,6 +27,10 @@ use App\Controllers\PersonController;
 use App\Controllers\SessionController;
 use App\Controllers\SensoryProposalController;
 use App\Controllers\StatsController;
+use App\Controllers\PublicBookingController;
+use App\Controllers\BookingController;
+use App\Controllers\SettingsController;
+use App\Controllers\DocumentController;
 use App\Utils\Response;
 
 // Error handling
@@ -94,6 +98,7 @@ $routes = [
     'PUT /users/([a-f0-9-]+)' => ['controller' => UserController::class, 'method' => 'update'],
     'PATCH /users/([a-f0-9-]+)' => ['controller' => UserController::class, 'method' => 'update'],
     'DELETE /users/([a-f0-9-]+)' => ['controller' => UserController::class, 'method' => 'destroy'],
+    'GET /users/([a-f0-9-]+)/loyalty' => ['controller' => UserController::class, 'method' => 'getLoyaltyCard'],
     'POST /users/([a-f0-9-]+)/persons/([a-f0-9-]+)' => ['controller' => UserController::class, 'method' => 'assignPerson'],
     'DELETE /users/([a-f0-9-]+)/persons/([a-f0-9-]+)' => ['controller' => UserController::class, 'method' => 'unassignPerson'],
 
@@ -130,6 +135,50 @@ $routes = [
     // Stats routes (admin only)
     'GET /stats/dashboard' => ['controller' => StatsController::class, 'method' => 'dashboard'],
     'GET /stats/audit-logs' => ['controller' => StatsController::class, 'method' => 'auditLogs'],
+
+    // Settings routes (admin only)
+    'GET /settings' => ['controller' => SettingsController::class, 'method' => 'index'],
+    'GET /settings/category/([a-z]+)' => ['controller' => SettingsController::class, 'method' => 'getByCategory'],
+    'PUT /settings' => ['controller' => SettingsController::class, 'method' => 'update'],
+    'GET /settings/sms-credits' => ['controller' => SettingsController::class, 'method' => 'getSmsCredits'],
+
+    // ============================================
+    // PUBLIC BOOKING ROUTES (No authentication)
+    // ============================================
+    'GET /public/availability/schedule' => ['controller' => PublicBookingController::class, 'method' => 'getSchedule'],
+    'GET /public/availability/dates' => ['controller' => PublicBookingController::class, 'method' => 'getAvailableDates'],
+    'GET /public/availability/slots' => ['controller' => PublicBookingController::class, 'method' => 'getAvailableSlots'],
+    'POST /public/bookings/check-email' => ['controller' => PublicBookingController::class, 'method' => 'checkEmail', 'rateLimit' => 'strict'],
+    'GET /public/bookings/persons' => ['controller' => PublicBookingController::class, 'method' => 'getPersonsByEmail'],
+    'POST /public/bookings' => ['controller' => PublicBookingController::class, 'method' => 'createBooking', 'rateLimit' => 'strict'],
+    'GET /public/bookings/confirm/([a-f0-9]+)' => ['controller' => PublicBookingController::class, 'method' => 'confirmBooking'],
+    'POST /public/bookings/cancel/([a-f0-9]+)' => ['controller' => PublicBookingController::class, 'method' => 'cancelBooking'],
+    'GET /public/bookings/([a-f0-9]+)' => ['controller' => PublicBookingController::class, 'method' => 'getBookingByToken'],
+    'GET /public/bookings/([a-f0-9]+)/ics' => ['controller' => PublicBookingController::class, 'method' => 'downloadICS'],
+
+    // ============================================
+    // ADMIN BOOKING ROUTES (Authentication required)
+    // ============================================
+    'GET /bookings' => ['controller' => BookingController::class, 'method' => 'index'],
+    'GET /bookings/stats' => ['controller' => BookingController::class, 'method' => 'stats'],
+    'GET /bookings/calendar' => ['controller' => BookingController::class, 'method' => 'calendar'],
+    'GET /bookings/pending-sessions' => ['controller' => BookingController::class, 'method' => 'pendingSessions'],
+    'GET /bookings/export/calendar' => ['controller' => BookingController::class, 'method' => 'exportCalendar'],
+    'GET /bookings/([a-f0-9-]+)' => ['controller' => BookingController::class, 'method' => 'show'],
+    'PUT /bookings/([a-f0-9-]+)' => ['controller' => BookingController::class, 'method' => 'update'],
+    'PATCH /bookings/([a-f0-9-]+)/status' => ['controller' => BookingController::class, 'method' => 'updateStatus'],
+    'DELETE /bookings/([a-f0-9-]+)' => ['controller' => BookingController::class, 'method' => 'destroy'],
+    'POST /bookings/([a-f0-9-]+)/reminder' => ['controller' => BookingController::class, 'method' => 'sendReminder'],
+    'POST /bookings/([a-f0-9-]+)/create-session' => ['controller' => BookingController::class, 'method' => 'createSession'],
+
+    // ============================================
+    // DOCUMENTS ROUTES (Admin only)
+    // ============================================
+    'GET /documents/(user|person)/([a-f0-9-]+)' => ['controller' => DocumentController::class, 'method' => 'listByEntity'],
+    'POST /documents/(user|person)/([a-f0-9-]+)' => ['controller' => DocumentController::class, 'method' => 'upload'],
+    'GET /documents/([a-f0-9-]+)/download' => ['controller' => DocumentController::class, 'method' => 'download'],
+    'GET /documents/([a-f0-9-]+)/view' => ['controller' => DocumentController::class, 'method' => 'view'],
+    'DELETE /documents/([a-f0-9-]+)' => ['controller' => DocumentController::class, 'method' => 'destroy'],
 
     // Health check
     'GET /' => ['handler' => fn() => Response::success(['status' => 'ok', 'version' => '1.0.0'], 'API Snoezelen')],

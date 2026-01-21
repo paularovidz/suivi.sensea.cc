@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import PersonSessionStats from '@/components/sessions/PersonSessionStats.vue'
+import DocumentsSection from '@/components/documents/DocumentsSection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -231,6 +232,13 @@ function getBehaviorBadgeClass(behavior) {
           <p class="text-gray-700 whitespace-pre-wrap">{{ person.notes }}</p>
         </div>
       </div>
+
+      <!-- Documents (admin only) -->
+      <DocumentsSection
+        v-if="authStore.isAdmin"
+        type="person"
+        :entity-id="person.id"
+      />
     </template>
 
     <ConfirmDialog

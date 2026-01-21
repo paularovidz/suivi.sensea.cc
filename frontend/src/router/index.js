@@ -31,7 +31,21 @@ import ProposalsListView from '@/views/proposals/ProposalsListView.vue'
 
 // Users Views
 import UsersListView from '@/views/users/UsersListView.vue'
+import UserDetailView from '@/views/users/UserDetailView.vue'
 import UserFormView from '@/views/users/UserFormView.vue'
+
+// Settings Views
+import SettingsView from '@/views/settings/SettingsView.vue'
+
+// Agenda View
+import AgendaView from '@/views/agenda/AgendaView.vue'
+
+// Booking Views (public)
+import BookingLayout from '@/components/layout/BookingLayout.vue'
+import BookingWizardView from '@/views/booking/BookingWizardView.vue'
+import BookingConfirmView from '@/views/booking/BookingConfirmView.vue'
+import BookingCancelView from '@/views/booking/BookingCancelView.vue'
+import BookingEmbedView from '@/views/booking/BookingEmbedView.vue'
 
 const routes = [
   // Auth routes
@@ -156,11 +170,64 @@ const routes = [
         component: UserFormView
       },
       {
+        path: 'users/:id',
+        name: 'user-detail',
+        component: UserDetailView
+      },
+      {
         path: 'users/:id/edit',
         name: 'user-edit',
         component: UserFormView
+      },
+
+      // Settings
+      {
+        path: 'settings',
+        name: 'settings',
+        component: SettingsView
+      },
+
+      // Agenda (bookings)
+      {
+        path: 'agenda',
+        name: 'agenda',
+        component: AgendaView
       }
     ]
+  },
+
+  // ============================================
+  // PUBLIC BOOKING ROUTES (No authentication)
+  // ============================================
+  {
+    path: '/booking',
+    component: BookingLayout,
+    meta: { public: true },
+    children: [
+      {
+        path: '',
+        name: 'booking',
+        component: BookingWizardView
+      },
+      {
+        path: 'confirm/:token',
+        name: 'booking-confirm',
+        component: BookingConfirmView
+      },
+      {
+        path: 'cancel/:token',
+        name: 'booking-cancel',
+        component: BookingCancelView
+      }
+    ]
+  },
+
+  // Embed view (standalone, no layout)
+  {
+    path: '/booking/embed',
+    name: 'booking-embed',
+    component: BookingEmbedView,
+    meta: { public: true, embed: true }
   },
 
   // Catch all - redirect to login
@@ -177,6 +244,11 @@ const router = createRouter({
 
 // Navigation guard
 router.beforeEach((to, from, next) => {
+  // Public routes don't need auth check
+  if (to.meta.public) {
+    return next()
+  }
+
   const authStore = useAuthStore()
 
   // Initialize auth from storage if not done

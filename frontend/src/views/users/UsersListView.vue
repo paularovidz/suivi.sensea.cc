@@ -54,7 +54,7 @@ function getRoleBadgeClass(role) {
 }
 
 function goToUser(userId) {
-  router.push(`/app/users/${userId}/edit`)
+  router.push(`/app/users/${userId}`)
 }
 </script>
 

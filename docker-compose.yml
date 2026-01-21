@@ -51,6 +51,15 @@ services:
       FRONTEND_URL: http://localhost:5173
       ENV: development
       DEBUG: "true"
+      APP_TIMEZONE: Europe/Paris
+      # Booking system
+      GOOGLE_ICAL_URL: ${GOOGLE_ICAL_URL:-}
+      BOOKING_ADMIN_EMAILS: ${BOOKING_ADMIN_EMAILS:-admin@sensea.local}
+      # OVH SMS (optional)
+      OVH_SMS_APP_KEY: ${OVH_SMS_APP_KEY:-}
+      OVH_SMS_APP_SECRET: ${OVH_SMS_APP_SECRET:-}
+      OVH_SMS_CONSUMER_KEY: ${OVH_SMS_CONSUMER_KEY:-}
+      OVH_SMS_SERVICE_NAME: ${OVH_SMS_SERVICE_NAME:-}
     volumes:
       - ./api:/var/www/html
       - /var/www/html/vendor

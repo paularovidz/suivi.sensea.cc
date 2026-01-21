@@ -83,7 +83,8 @@ export const usersApi = {
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
   assignPerson: (userId, personId) => api.post(`/users/${userId}/persons/${personId}`),
-  unassignPerson: (userId, personId) => api.delete(`/users/${userId}/persons/${personId}`)
+  unassignPerson: (userId, personId) => api.delete(`/users/${userId}/persons/${personId}`),
+  getLoyaltyCard: (id) => api.get(`/users/${id}/loyalty`)
 }
 
 // Persons API
@@ -123,4 +124,67 @@ export const sensoryProposalsApi = {
 export const statsApi = {
   getDashboard: () => api.get('/stats/dashboard'),
   getAuditLogs: (params) => api.get('/stats/audit-logs', { params })
+}
+
+// ============================================
+// PUBLIC BOOKING API (No auth required)
+// ============================================
+export const publicBookingApi = {
+  // Availability
+  getSchedule: () => api.get('/public/availability/schedule'),
+  getAvailableDates: (year, month, type) =>
+    api.get('/public/availability/dates', { params: { year, month, type } }),
+  getAvailableSlots: (date, type) =>
+    api.get('/public/availability/slots', { params: { date, type } }),
+
+  // Client check
+  checkEmail: (email) => api.post('/public/bookings/check-email', { email }),
+  getPersonsByEmail: (email) =>
+    api.get('/public/bookings/persons', { params: { email } }),
+
+  // Booking operations
+  createBooking: (data) => api.post('/public/bookings', data),
+  confirmBooking: (token) => api.get(`/public/bookings/confirm/${token}`),
+  cancelBooking: (token) => api.post(`/public/bookings/cancel/${token}`),
+  getBookingByToken: (token) => api.get(`/public/bookings/${token}`),
+  downloadICS: (token) => api.get(`/public/bookings/${token}/ics`, { responseType: 'blob' })
+}
+
+// Bookings API (Admin - auth required)
+export const bookingsApi = {
+  getAll: (params) => api.get('/bookings', { params }),
+  getStats: () => api.get('/bookings/stats'),
+  getCalendar: (year, month) => api.get('/bookings/calendar', { params: { year, month } }),
+  getPendingSessions: () => api.get('/bookings/pending-sessions'),
+  getById: (id) => api.get(`/bookings/${id}`),
+  update: (id, data) => api.put(`/bookings/${id}`, data),
+  updateStatus: (id, status) => api.patch(`/bookings/${id}/status`, { status }),
+  delete: (id) => api.delete(`/bookings/${id}`),
+  sendReminder: (id) => api.post(`/bookings/${id}/reminder`),
+  createSession: (id) => api.post(`/bookings/${id}/create-session`),
+  exportCalendar: (params) => api.get('/bookings/export/calendar', { params, responseType: 'blob' })
+}
+
+// Settings API (Admin - auth required)
+export const settingsApi = {
+  getAll: () => api.get('/settings'),
+  getByCategory: (category) => api.get(`/settings/category/${category}`),
+  update: (settings) => api.put('/settings', { settings }),
+  getSmsCredits: () => api.get('/settings/sms-credits')
+}
+
+// Documents API (Admin - auth required)
+export const documentsApi = {
+  list: (type, entityId) => api.get(`/documents/${type}/${entityId}`),
+  upload: (type, entityId, file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post(`/documents/${type}/${entityId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  download: (id) => api.get(`/documents/${id}/download`, { responseType: 'blob' }),
+  view: (id) => api.get(`/documents/${id}/view`, { responseType: 'blob' }),
+  getViewUrl: (id) => `${API_URL}/documents/${id}/view`,
+  delete: (id) => api.delete(`/documents/${id}`)
 }

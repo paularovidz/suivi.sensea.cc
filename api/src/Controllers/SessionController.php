@@ -7,6 +7,9 @@ namespace App\Controllers;
 use App\Models\Session;
 use App\Models\Person;
 use App\Models\SensoryProposal;
+use App\Models\User;
+use App\Models\LoyaltyCard;
+use App\Models\Setting;
 use App\Middleware\AuthMiddleware;
 use App\Services\AuditService;
 use App\Utils\Response;
@@ -145,8 +148,43 @@ class SessionController
 
         $data['created_by'] = $currentUser['id'];
 
+        // Vérifier la carte de fidélité des utilisateurs assignés à cette personne
+        $loyaltyWarning = null;
+        $assignedUsers = Person::getAssignedUsers($data['person_id']);
+        $sessionsRequired = Setting::getInteger('loyalty_sessions_required', 9);
+
+        foreach ($assignedUsers as $assignedUser) {
+            // Seuls les particuliers sont éligibles
+            if (User::isPersonalClient($assignedUser['id'])) {
+                $loyaltyInfo = LoyaltyCard::getWithProgress($assignedUser['id'], $sessionsRequired);
+                if ($loyaltyInfo['eligible'] && $loyaltyInfo['free_session_available']) {
+                    $loyaltyWarning = [
+                        'user_id' => $assignedUser['id'],
+                        'user_name' => $assignedUser['first_name'] . ' ' . $assignedUser['last_name'],
+                        'message' => 'Ce client a une séance gratuite disponible sur sa carte de fidélité!'
+                    ];
+                    break;
+                }
+            }
+        }
+
         $sessionId = Session::create($data);
         $session = Session::findById($sessionId);
+
+        // Mettre à jour la carte de fidélité si ce n'est pas une séance gratuite
+        $isFreeSession = $data['is_free_session'] ?? false;
+
+        foreach ($assignedUsers as $assignedUser) {
+            if (User::isPersonalClient($assignedUser['id'])) {
+                if ($isFreeSession) {
+                    // Marquer la séance gratuite comme utilisée
+                    LoyaltyCard::markFreeSessionUsed($assignedUser['id']);
+                } else {
+                    // Incrémenter le compteur de séances
+                    LoyaltyCard::incrementSessions($assignedUser['id'], $sessionsRequired);
+                }
+            }
+        }
 
         AuditService::log(
             $currentUser['id'],
@@ -157,7 +195,13 @@ class SessionController
             ['person_id' => $data['person_id'], 'session_date' => $data['session_date']]
         );
 
-        Response::success($session, 'Séance créée avec succès', 201);
+        // Inclure l'alerte de fidélité dans la réponse si applicable
+        $response = $session;
+        if ($loyaltyWarning) {
+            $response['loyalty_warning'] = $loyaltyWarning;
+        }
+
+        Response::success($response, 'Séance créée avec succès', 201);
     }
 
     public function update(string $id): void

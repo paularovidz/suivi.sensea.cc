@@ -47,8 +47,13 @@ const form = ref({
   professional_notes: '',
   person_expression: '',
   next_session_proposals: '',
-  proposals: []
+  proposals: [],
+  is_invoiced: false,
+  is_paid: false,
+  is_free_session: false
 })
+
+const loyaltyWarning = ref(null)
 
 const showPersonDropdown = ref(false)
 
@@ -162,7 +167,10 @@ onMounted(async () => {
           title: p.title,
           type: p.type,
           appreciation: p.appreciation || ''
-        }))
+        })),
+        is_invoiced: session.is_invoiced || false,
+        is_paid: session.is_paid || false,
+        is_free_session: session.is_free_session || false
       }
     }
   } catch (e) {
@@ -268,6 +276,10 @@ async function handleSubmit() {
       router.push(`/app/sessions/${route.params.id}`)
     } else {
       const session = await sessionsStore.createSession(data)
+      // Vérifier si une alerte fidélité est retournée
+      if (session.loyalty_warning) {
+        loyaltyWarning.value = session.loyalty_warning
+      }
       router.push(`/app/sessions/${session.id}`)
     }
   } catch (e) {
@@ -300,6 +312,10 @@ function cancel() {
     <LoadingSpinner v-if="loading" size="lg" class="py-12" />
 
     <form v-else @submit.prevent="handleSubmit" class="space-y-6">
+      <AlertMessage v-if="loyaltyWarning" type="warning" class="mb-4">
+        <strong>Attention:</strong> {{ loyaltyWarning.user_name }} - {{ loyaltyWarning.message }}
+      </AlertMessage>
+
       <AlertMessage v-if="error" type="error" dismissible @dismiss="error = ''">
         {{ error }}
       </AlertMessage>
@@ -529,6 +545,43 @@ function cancel() {
               <option :value="true">Oui</option>
               <option :value="false">Non</option>
             </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Facturation -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="font-semibold text-gray-900">Facturation</h2>
+        </div>
+        <div class="card-body">
+          <div class="flex flex-wrap gap-6">
+            <label class="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                v-model="form.is_invoiced"
+                class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <span class="ml-2 text-sm text-gray-700">Facturee</span>
+            </label>
+
+            <label class="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                v-model="form.is_paid"
+                class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <span class="ml-2 text-sm text-gray-700">Payee</span>
+            </label>
+
+            <label class="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                v-model="form.is_free_session"
+                class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+              />
+              <span class="ml-2 text-sm text-gray-700">Seance gratuite (fidelite)</span>
+            </label>
           </div>
         </div>
       </div>

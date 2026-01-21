@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSessionsStore } from '@/stores/sessions'
-import { statsApi, sessionsApi } from '@/services/api'
+import { statsApi, sessionsApi, bookingsApi } from '@/services/api'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import SessionCalendar from '@/components/ui/SessionCalendar.vue'
 
@@ -13,6 +13,7 @@ const sessionsStore = useSessionsStore()
 const loading = ref(true)
 const stats = ref(null)
 const calendarData = ref({})
+const bookingsCalendarData = ref({})
 const calendarYear = ref(new Date().getFullYear())
 const calendarMonth = ref(new Date().getMonth() + 1)
 
@@ -38,11 +39,16 @@ onMounted(async () => {
 
 async function loadCalendarData() {
   try {
-    const response = await sessionsApi.getStats({
-      year: calendarYear.value,
-      month: calendarMonth.value
-    })
-    calendarData.value = response.data.data.calendar || {}
+    // Fetch bookings calendar data (admin only) - no longer showing sessions
+    if (authStore.isAdmin) {
+      try {
+        const bookingsResponse = await bookingsApi.getCalendar(calendarYear.value, calendarMonth.value)
+        bookingsCalendarData.value = bookingsResponse.data.data.calendar || {}
+      } catch (e) {
+        console.error('Error loading bookings calendar:', e)
+        bookingsCalendarData.value = {}
+      }
+    }
   } catch (e) {
     console.error('Error loading calendar:', e)
   }
@@ -125,6 +131,7 @@ function formatDate(dateString) {
           <div class="card-body">
             <SessionCalendar
               :data="calendarData"
+              :bookings-data="bookingsCalendarData"
               :year="calendarYear"
               :month="calendarMonth"
               @change-month="handleMonthChange"

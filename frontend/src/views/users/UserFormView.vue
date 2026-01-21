@@ -22,8 +22,13 @@ const form = ref({
   phone: '',
   role: 'member',
   is_active: true,
+  client_type: 'personal',
+  company_name: '',
+  siret: '',
   assign_to_persons: []
 })
+
+const isAssociation = computed(() => form.value.client_type === 'association')
 
 const assignedPersons = ref([])
 const personSearch = ref('')
@@ -45,7 +50,10 @@ onMounted(async () => {
         last_name: user.last_name || '',
         phone: user.phone || '',
         role: user.role || 'member',
-        is_active: user.is_active ?? true
+        is_active: user.is_active ?? true,
+        client_type: user.client_type || 'personal',
+        company_name: user.company_name || '',
+        siret: user.siret || ''
       }
       assignedPersons.value = (user.persons || []).map(p => p.id)
     }
@@ -201,6 +209,30 @@ function cancel() {
               </select>
             </div>
           </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="client_type" class="label">Type de client *</label>
+              <select id="client_type" v-model="form.client_type" class="input">
+                <option value="personal">Particulier</option>
+                <option value="association">Association</option>
+              </select>
+            </div>
+          </div>
+
+          <template v-if="isAssociation">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="company_name" class="label">Nom de l'association</label>
+                <input id="company_name" v-model="form.company_name" type="text" class="input" placeholder="Nom de l'association" />
+              </div>
+
+              <div>
+                <label for="siret" class="label">N SIRET</label>
+                <input id="siret" v-model="form.siret" type="text" class="input" maxlength="14" placeholder="12345678901234" />
+              </div>
+            </div>
+          </template>
 
           <div v-if="isEdit" class="flex items-center">
             <input

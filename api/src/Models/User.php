@@ -9,6 +9,38 @@ use App\Utils\UUID;
 
 class User
 {
+    // Client types
+    public const CLIENT_TYPE_PERSONAL = 'personal';
+    public const CLIENT_TYPE_ASSOCIATION = 'association';
+
+    public const CLIENT_TYPES = [
+        self::CLIENT_TYPE_PERSONAL,
+        self::CLIENT_TYPE_ASSOCIATION
+    ];
+
+    public const CLIENT_TYPE_LABELS = [
+        'personal' => 'Particulier',
+        'association' => 'Association'
+    ];
+
+    /**
+     * Vérifie si un utilisateur est un particulier (éligible au programme fidélité)
+     */
+    public static function isPersonalClient(string $userId): bool
+    {
+        $user = self::findById($userId);
+        return $user && ($user['client_type'] ?? self::CLIENT_TYPE_PERSONAL) === self::CLIENT_TYPE_PERSONAL;
+    }
+
+    /**
+     * Vérifie si un utilisateur est une association
+     */
+    public static function isAssociation(string $userId): bool
+    {
+        $user = self::findById($userId);
+        return $user && ($user['client_type'] ?? self::CLIENT_TYPE_PERSONAL) === self::CLIENT_TYPE_ASSOCIATION;
+    }
+
     public static function findById(string $id): ?array
     {
         $db = Database::getInstance();
@@ -43,7 +75,8 @@ class User
     {
         $db = Database::getInstance();
         $stmt = $db->prepare('
-            SELECT id, email, login, first_name, last_name, phone, role, is_active, created_at, updated_at
+            SELECT id, email, login, first_name, last_name, phone, role, is_active,
+                   client_type, company_name, siret, created_at, updated_at
             FROM users
             ORDER BY last_name, first_name
             LIMIT :limit OFFSET :offset
@@ -68,8 +101,8 @@ class User
         $id = UUID::generate();
 
         $stmt = $db->prepare('
-            INSERT INTO users (id, email, login, first_name, last_name, phone, role, is_active)
-            VALUES (:id, :email, :login, :first_name, :last_name, :phone, :role, :is_active)
+            INSERT INTO users (id, email, login, first_name, last_name, phone, role, is_active, client_type, company_name, siret)
+            VALUES (:id, :email, :login, :first_name, :last_name, :phone, :role, :is_active, :client_type, :company_name, :siret)
         ');
 
         $stmt->execute([
@@ -80,7 +113,10 @@ class User
             'last_name' => trim($data['last_name']),
             'phone' => isset($data['phone']) ? trim($data['phone']) : null,
             'role' => $data['role'] ?? 'member',
-            'is_active' => ($data['is_active'] ?? true) ? 1 : 0
+            'is_active' => ($data['is_active'] ?? true) ? 1 : 0,
+            'client_type' => $data['client_type'] ?? self::CLIENT_TYPE_PERSONAL,
+            'company_name' => isset($data['company_name']) ? trim($data['company_name']) : null,
+            'siret' => isset($data['siret']) ? preg_replace('/\s+/', '', $data['siret']) : null
         ]);
 
         return $id;
@@ -93,7 +129,7 @@ class User
         $fields = [];
         $params = ['id' => $id];
 
-        $allowedFields = ['email', 'login', 'first_name', 'last_name', 'phone', 'role', 'is_active'];
+        $allowedFields = ['email', 'login', 'first_name', 'last_name', 'phone', 'role', 'is_active', 'client_type', 'company_name', 'siret'];
 
         foreach ($allowedFields as $field) {
             if (array_key_exists($field, $data)) {
@@ -105,6 +141,9 @@ class User
                 } elseif ($field === 'is_active') {
                     // Convert to integer for MySQL TINYINT
                     $value = $value ? 1 : 0;
+                } elseif ($field === 'siret' && $value !== null) {
+                    // Remove spaces from SIRET
+                    $value = preg_replace('/\s+/', '', (string)$value);
                 } elseif (is_string($value)) {
                     $value = trim($value);
                 }
