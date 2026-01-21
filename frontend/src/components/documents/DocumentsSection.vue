@@ -195,9 +195,9 @@ function isPdf(mimeType) {
 </script>
 
 <template>
-  <div :class="dark ? 'card-dark overflow-hidden' : 'card'">
-    <div :class="[dark ? 'card-dark-header' : 'card-header', 'flex items-center justify-between']">
-      <h2 :class="['font-semibold', dark ? 'text-white' : 'text-gray-900']">{{ title }}</h2>
+  <div class="card-dark overflow-hidden">
+    <div class="card-dark-header flex items-center justify-between">
+      <h2 class="font-semibold text-white">{{ title }}</h2>
       <template v-if="!readonly">
         <button @click="triggerUpload" class="btn-secondary text-sm" :disabled="uploading">
           <LoadingSpinner v-if="uploading" size="sm" class="mr-2" />
@@ -216,7 +216,7 @@ function isPdf(mimeType) {
       </template>
     </div>
 
-    <div :class="dark ? 'card-dark-body' : 'card-body'">
+    <div class="card-dark-body">
       <AlertMessage v-if="error" type="error" dismissible @dismiss="error = ''" class="mb-4">
         {{ error }}
       </AlertMessage>
@@ -225,36 +225,36 @@ function isPdf(mimeType) {
         <LoadingSpinner size="lg" />
       </div>
 
-      <div v-else-if="documents.length === 0" :class="['text-center py-8', dark ? 'text-gray-400' : 'text-gray-500']">
-        <svg :class="['w-12 h-12 mx-auto mb-3', dark ? 'text-gray-600' : 'text-gray-300']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div v-else-if="documents.length === 0" class="text-center py-8 text-gray-400">
+        <svg class="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <p>Aucun document</p>
       </div>
 
-      <div v-else :class="['divide-y', dark ? 'divide-gray-700/50' : 'divide-gray-100']">
+      <div v-else class="divide-y divide-gray-700/50">
         <div
           v-for="doc in documents"
           :key="doc.id"
-          :class="['flex items-center py-3 -mx-4 px-4 transition-colors', dark ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50']"
+          class="flex items-center py-3 -mx-4 px-4 transition-colors hover:bg-gray-700/30"
         >
           <!-- Icon -->
           <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3"
-               :class="isPdf(doc.mime_type) ? (dark ? 'bg-red-900/50' : 'bg-red-100') : (dark ? 'bg-blue-900/50' : 'bg-blue-100')">
+               :class="isPdf(doc.mime_type) ? 'bg-red-900/50' : 'bg-blue-900/50'">
             <!-- PDF Icon -->
-            <svg v-if="isPdf(doc.mime_type)" :class="['w-5 h-5', dark ? 'text-red-400' : 'text-red-600']" fill="currentColor" viewBox="0 0 20 20">
+            <svg v-if="isPdf(doc.mime_type)" :class="['w-5 h-5', 'text-red-400']" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
             </svg>
             <!-- Image Icon -->
-            <svg v-else :class="['w-5 h-5', dark ? 'text-blue-400' : 'text-blue-600']" fill="currentColor" viewBox="0 0 20 20">
+            <svg v-else class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
             </svg>
           </div>
 
           <!-- Info -->
           <div class="flex-1 min-w-0">
-            <div :class="['font-medium truncate', dark ? 'text-white' : 'text-gray-900']">{{ doc.original_name }}</div>
-            <div :class="['text-sm', dark ? 'text-gray-400' : 'text-gray-500']">
+            <div class="['font-medium truncate text-white]">{{ doc.original_name }}</div>
+            <div class="text-sm text-gray-400">
               {{ formatFileSize(doc.size) }} - {{ formatDate(doc.created_at) }}
               <span v-if="doc.uploader_first_name" class="hidden sm:inline">
                 par {{ doc.uploader_first_name }} {{ doc.uploader_last_name }}
@@ -268,7 +268,7 @@ function isPdf(mimeType) {
             <button
               v-if="isImage(doc.mime_type) || isPdf(doc.mime_type)"
               @click="viewDocument(doc)"
-              :class="['p-2 rounded-lg', dark ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100']"
+              class="['p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700"
               title="Visualiser"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,7 +280,7 @@ function isPdf(mimeType) {
             <!-- Download -->
             <button
               @click="downloadDocument(doc)"
-              :class="['p-2 rounded-lg', dark ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100']"
+              class="['p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700"
               title="Telecharger"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,7 +292,7 @@ function isPdf(mimeType) {
             <button
               v-if="!readonly"
               @click="confirmDelete(doc)"
-              :class="['p-2 rounded-lg', dark ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/30' : 'text-gray-400 hover:text-red-600 hover:bg-red-50']"
+              class="['p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-900/30"
               title="Supprimer"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

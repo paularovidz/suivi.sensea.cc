@@ -197,7 +197,7 @@ const isPersonalClient = computed(() => {
       <!-- Assigned persons -->
       <div v-if="user.persons && user.persons.length > 0" class="bg-gray-800 rounded-xl border border-gray-700">
         <div class="px-6 py-4 border-b border-gray-700">
-          <h2 class="font-semibold text-white">Personnes assignees ({{ user.persons.length }})</h2>
+          <h2 class="font-semibold text-white">Personnes assignées ({{ user.persons.length }})</h2>
         </div>
         <div class="divide-y divide-gray-700">
           <RouterLink
