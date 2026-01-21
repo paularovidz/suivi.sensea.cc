@@ -16,7 +16,7 @@
           Réservation de séance
         </h1>
         <p class="text-sm text-gray-500 mt-1">
-          Sensea Snoezelen
+          sensëa Snoezelen
         </p>
       </div>
 
@@ -90,7 +90,7 @@
             rel="noopener noreferrer"
             class="text-indigo-500 hover:underline"
           >
-            Sensea Snoezelen
+            sensëa Snoezelen
           </a>
         </p>
       </div>

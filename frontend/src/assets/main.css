@@ -4,11 +4,11 @@
 
 @layer base {
   html {
-    @apply text-gray-900;
+    @apply text-gray-900 dark:text-gray-100;
   }
 
   body {
-    @apply min-h-screen;
+    @apply min-h-screen bg-gray-50 dark:bg-gray-900;
   }
 }
 
@@ -22,7 +22,7 @@
   }
 
   .btn-secondary {
-    @apply btn bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-gray-500;
+    @apply btn bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 focus:ring-gray-500;
   }
 
   .btn-danger {
@@ -38,7 +38,7 @@
   }
 
   .input {
-    @apply w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow duration-200;
+    @apply w-full px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow duration-200;
   }
 
   .input-error {
@@ -46,15 +46,15 @@
   }
 
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
   }
 
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100;
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700;
   }
 
   .card-header {
-    @apply px-6 py-4 border-b border-gray-100;
+    @apply px-6 py-4 border-b border-gray-100 dark:border-gray-700;
   }
 
   .card-body {
@@ -119,15 +119,15 @@
   }
 
   .table th {
-    @apply px-4 py-3 font-medium text-gray-500 uppercase tracking-wider text-xs bg-gray-50;
+    @apply px-4 py-3 font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider text-xs bg-gray-50 dark:bg-gray-800;
   }
 
   .table td {
-    @apply px-4 py-3 border-b border-gray-100;
+    @apply px-4 py-3 border-b border-gray-100 dark:border-gray-700 text-gray-900 dark:text-gray-100;
   }
 
   .table tr:hover td {
-    @apply bg-gray-50;
+    @apply bg-gray-50 dark:bg-gray-700/50;
   }
 }
 
@@ -138,6 +138,65 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-sensea-light to-sensea;
+  }
+
+  /* Dark mode background */
+  .bg-dark {
+    @apply bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
+  }
+
+  /* Dark mode card */
+  .card-dark {
+    @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl;
+  }
+
+  .card-dark-header {
+    @apply px-6 py-4 border-b border-gray-700/50;
+  }
+
+  .card-dark-body {
+    @apply p-6;
+  }
+
+  /* Dark mode interactive card/button */
+  .card-dark-interactive {
+    @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl transition-all hover:border-indigo-500/50 hover:bg-gray-800/70;
+  }
+
+  /* Dark mode header */
+  .header-dark {
+    @apply bg-gray-800/50 backdrop-blur-sm border-b border-gray-700/50;
+  }
+
+  /* Dark mode input */
+  .input-dark {
+    @apply w-full px-4 py-2 text-sm bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow duration-200;
+  }
+
+  /* Dark mode badges */
+  .badge-dark-success {
+    @apply badge bg-green-900/50 text-green-300;
+  }
+
+  .badge-dark-warning {
+    @apply badge bg-amber-900/50 text-amber-300;
+  }
+
+  .badge-dark-danger {
+    @apply badge bg-red-900/50 text-red-300;
+  }
+
+  .badge-dark-gray {
+    @apply badge bg-gray-700 text-gray-300;
+  }
+
+  /* Dark mode button variants */
+  .btn-dark-primary {
+    @apply btn bg-indigo-600 text-white hover:bg-indigo-500 focus:ring-indigo-500;
+  }
+
+  .btn-dark-secondary {
+    @apply btn bg-gray-700 text-gray-200 border border-gray-600 hover:bg-gray-600 focus:ring-gray-500;
   }
 }
 
@@ -159,6 +218,19 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
 
 /* Transitions */

@@ -3,13 +3,16 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useSessionsStore } from '@/stores/sessions'
 import { useProposalsStore } from '@/stores/proposals'
+import { useAuthStore } from '@/stores/auth'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import DocumentsSection from '@/components/documents/DocumentsSection.vue'
 
 const route = useRoute()
 const router = useRouter()
 const sessionsStore = useSessionsStore()
 const proposalsStore = useProposalsStore()
+const authStore = useAuthStore()
 
 const loading = ref(true)
 const confirmDialog = ref(null)
@@ -111,16 +114,16 @@ function getAppreciationBadgeClass(appreciation) {
       <!-- Header -->
       <div class="flex items-start justify-between">
         <div class="flex items-center">
-          <RouterLink to="/app/sessions" class="mr-4 p-2 rounded-lg hover:bg-gray-100">
-            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <RouterLink to="/app/sessions" class="mr-4 p-2 rounded-lg hover:bg-gray-700">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
           </RouterLink>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900">
+            <h1 class="text-2xl font-bold text-white">
               Séance du {{ formatDateTime(session.session_date) }}
             </h1>
-            <RouterLink :to="`/app/persons/${session.person_id}`" class="text-primary-600 hover:text-primary-700">
+            <RouterLink :to="`/app/persons/${session.person_id}`" class="text-primary-400 hover:text-primary-300">
               {{ session.person_first_name }} {{ session.person_last_name }}
               <span v-if="session.person_birth_date"> - {{ new Date().getFullYear() - new Date(session.person_birth_date).getFullYear() }} ans</span>
             </RouterLink>
@@ -138,58 +141,58 @@ function getAppreciationBadgeClass(appreciation) {
 
       <!-- Info cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="card p-6">
-          <div class="text-sm text-gray-500 mb-1">Durée</div>
-          <div class="text-lg font-semibold">{{ session.duration_minutes }} minutes</div>
+        <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <div class="text-sm text-gray-400 mb-1">Durée</div>
+          <div class="text-lg font-semibold text-white">{{ session.duration_minutes }} minutes</div>
         </div>
-        <div class="card p-6">
-          <div class="text-sm text-gray-500 mb-1">Séances / mois</div>
-          <div class="text-lg font-semibold">{{ session.sessions_per_month || '-' }}</div>
+        <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <div class="text-sm text-gray-400 mb-1">Séances / mois</div>
+          <div class="text-lg font-semibold text-white">{{ session.sessions_per_month || '-' }}</div>
         </div>
-        <div class="card p-6">
-          <div class="text-sm text-gray-500 mb-1">Souhaite revenir</div>
+        <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <div class="text-sm text-gray-400 mb-1">Souhaite revenir</div>
           <div class="text-lg font-semibold">
-            <span v-if="session.wants_to_return === true" class="text-green-600">Oui</span>
-            <span v-else-if="session.wants_to_return === false" class="text-red-600">Non</span>
-            <span v-else class="text-gray-400">Non renseigné</span>
+            <span v-if="session.wants_to_return === true" class="text-green-400">Oui</span>
+            <span v-else-if="session.wants_to_return === false" class="text-red-400">Non</span>
+            <span v-else class="text-gray-500">Non renseigné</span>
           </div>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Début de séance -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="font-semibold text-gray-900">Début de séance</h2>
+        <div class="bg-gray-800 rounded-xl border border-gray-700">
+          <div class="px-6 py-4 border-b border-gray-700">
+            <h2 class="font-semibold text-white">Début de séance</h2>
           </div>
-          <div class="card-body space-y-4">
+          <div class="px-6 py-4 space-y-4">
             <div>
-              <div class="text-sm text-gray-500">Comportement</div>
-              <div class="font-medium">{{ labels.behavior[session.behavior_start] || '-' }}</div>
+              <div class="text-sm text-gray-400">Comportement</div>
+              <div class="font-medium text-gray-200">{{ labels.behavior[session.behavior_start] || '-' }}</div>
             </div>
             <div>
-              <div class="text-sm text-gray-500">Proposition vient de</div>
-              <div class="font-medium">{{ labels.proposal_origin[session.proposal_origin] || '-' }}</div>
+              <div class="text-sm text-gray-400">Proposition vient de</div>
+              <div class="font-medium text-gray-200">{{ labels.proposal_origin[session.proposal_origin] || '-' }}</div>
             </div>
             <div>
-              <div class="text-sm text-gray-500">Attitude</div>
-              <div class="font-medium">{{ labels.attitude_start[session.attitude_start] || '-' }}</div>
+              <div class="text-sm text-gray-400">Attitude</div>
+              <div class="font-medium text-gray-200">{{ labels.attitude_start[session.attitude_start] || '-' }}</div>
             </div>
           </div>
         </div>
 
         <!-- Pendant la séance -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="font-semibold text-gray-900">Pendant la séance</h2>
+        <div class="bg-gray-800 rounded-xl border border-gray-700">
+          <div class="px-6 py-4 border-b border-gray-700">
+            <h2 class="font-semibold text-white">Pendant la séance</h2>
           </div>
-          <div class="card-body space-y-4">
+          <div class="px-6 py-4 space-y-4">
             <div>
-              <div class="text-sm text-gray-500">Position</div>
-              <div class="font-medium">{{ labels.position[session.position] || '-' }}</div>
+              <div class="text-sm text-gray-400">Position</div>
+              <div class="font-medium text-gray-200">{{ labels.position[session.position] || '-' }}</div>
             </div>
             <div>
-              <div class="text-sm text-gray-500">Communication</div>
+              <div class="text-sm text-gray-400">Communication</div>
               <div class="flex flex-wrap gap-2 mt-1">
                 <span
                   v-for="comm in (session.communication || [])"
@@ -198,53 +201,53 @@ function getAppreciationBadgeClass(appreciation) {
                 >
                   {{ labels.communication[comm] }}
                 </span>
-                <span v-if="!session.communication?.length" class="text-gray-400">-</span>
+                <span v-if="!session.communication?.length" class="text-gray-500">-</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Fin de séance -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="font-semibold text-gray-900">Fin de séance</h2>
+        <div class="bg-gray-800 rounded-xl border border-gray-700">
+          <div class="px-6 py-4 border-b border-gray-700">
+            <h2 class="font-semibold text-white">Fin de séance</h2>
           </div>
-          <div class="card-body space-y-4">
+          <div class="px-6 py-4 space-y-4">
             <div>
-              <div class="text-sm text-gray-500">Fin de séance</div>
-              <div class="font-medium">{{ labels.session_end[session.session_end] || '-' }}</div>
+              <div class="text-sm text-gray-400">Fin de séance</div>
+              <div class="font-medium text-gray-200">{{ labels.session_end[session.session_end] || '-' }}</div>
             </div>
             <div>
-              <div class="text-sm text-gray-500">Comportement</div>
-              <div class="font-medium">{{ labels.behavior[session.behavior_end] || '-' }}</div>
+              <div class="text-sm text-gray-400">Comportement</div>
+              <div class="font-medium text-gray-200">{{ labels.behavior[session.behavior_end] || '-' }}</div>
             </div>
           </div>
         </div>
 
         <!-- Infos complémentaires -->
-        <div class="card">
-          <div class="card-header">
-            <h2 class="font-semibold text-gray-900">Informations</h2>
+        <div class="bg-gray-800 rounded-xl border border-gray-700">
+          <div class="px-6 py-4 border-b border-gray-700">
+            <h2 class="font-semibold text-white">Informations</h2>
           </div>
-          <div class="card-body space-y-4">
+          <div class="px-6 py-4 space-y-4">
             <div>
-              <div class="text-sm text-gray-500">Créé par</div>
-              <div class="font-medium">{{ session.creator_first_name }} {{ session.creator_last_name }}</div>
+              <div class="text-sm text-gray-400">Créé par</div>
+              <div class="font-medium text-gray-200">{{ session.creator_first_name }} {{ session.creator_last_name }}</div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Propositions sensorielles -->
-      <div v-if="session.proposals?.length" class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Propositions sensorielles</h2>
+      <div v-if="session.proposals?.length" class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Propositions sensorielles</h2>
         </div>
-        <div class="divide-y divide-gray-100">
+        <div class="divide-y divide-gray-700">
           <div v-for="proposal in session.proposals" :key="proposal.link_id" class="px-6 py-4 flex items-center justify-between">
             <div>
-              <div class="font-medium text-gray-900">{{ proposal.title }}</div>
-              <div class="text-sm text-gray-500">
+              <div class="font-medium text-gray-200">{{ proposal.title }}</div>
+              <div class="text-sm text-gray-400">
                 <span :class="proposalsStore.getTypeBadgeClass(proposal.type)">
                   {{ proposalsStore.getTypeLabel(proposal.type) }}
                 </span>
@@ -259,25 +262,40 @@ function getAppreciationBadgeClass(appreciation) {
 
       <!-- Notes privées -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div v-if="session.professional_notes" class="card">
-          <div class="card-header">
-            <h2 class="font-semibold text-gray-900">Impressions du professionnel</h2>
-            <span class="text-xs text-gray-400">Note privée</span>
+        <div v-if="session.professional_notes" class="bg-gray-800 rounded-xl border border-gray-700">
+          <div class="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+            <h2 class="font-semibold text-white">Impressions du professionnel</h2>
+            <span class="text-xs text-gray-500">Note privée</span>
           </div>
-          <div class="card-body">
-            <p class="text-gray-700 whitespace-pre-wrap">{{ session.professional_notes }}</p>
+          <div class="px-6 py-4">
+            <p class="text-gray-300 whitespace-pre-wrap">{{ session.professional_notes }}</p>
           </div>
         </div>
 
-        <div v-if="session.person_expression" class="card">
-          <div class="card-header">
-            <h2 class="font-semibold text-gray-900">Expression de la personne</h2>
-            <span class="text-xs text-gray-400">Note privée</span>
+        <div v-if="session.person_expression" class="bg-gray-800 rounded-xl border border-gray-700">
+          <div class="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+            <h2 class="font-semibold text-white">Expression de la personne</h2>
+            <span class="text-xs text-gray-500">Note privée</span>
           </div>
-          <div class="card-body">
-            <p class="text-gray-700 whitespace-pre-wrap">{{ session.person_expression }}</p>
+          <div class="px-6 py-4">
+            <p class="text-gray-300 whitespace-pre-wrap">{{ session.person_expression }}</p>
           </div>
         </div>
+      </div>
+
+      <!-- Documents (admin only) - attached to the person -->
+      <div v-if="authStore.isAdmin" class="space-y-2">
+        <p class="text-sm text-gray-400">
+          Documents joints à
+          <RouterLink :to="`/app/persons/${session.person_id}`" class="text-primary-400 hover:underline">
+            {{ session.person_first_name }} {{ session.person_last_name }}
+          </RouterLink>
+          (factures, etc.)
+        </p>
+        <DocumentsSection
+          type="person"
+          :entity-id="session.person_id"
+        />
       </div>
     </template>
 

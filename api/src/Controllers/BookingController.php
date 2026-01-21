@@ -53,6 +53,18 @@ class BookingController
             $filters['duration_type'] = $_GET['duration_type'];
         }
 
+        if (!empty($_GET['person_id'])) {
+            $filters['person_id'] = $_GET['person_id'];
+        }
+
+        if (!empty($_GET['no_session'])) {
+            $filters['no_session'] = true;
+        }
+
+        if (!empty($_GET['upcoming'])) {
+            $filters['upcoming'] = true;
+        }
+
         $bookings = Booking::findAll($filters, $limit, $offset);
         $total = Booking::count($filters);
 
@@ -256,6 +268,7 @@ class BookingController
     /**
      * DELETE /bookings/{id}
      * Supprime une réservation (admin uniquement)
+     * Envoie un email d'annulation au client si la réservation était confirmée
      */
     public function destroy(string $id): void
     {
@@ -274,6 +287,13 @@ class BookingController
             Response::error('Impossible de supprimer une réservation liée à une séance', 400);
         }
 
+        // Envoyer un email d'annulation si la réservation n'était pas déjà annulée
+        $emailSent = false;
+        if ($booking['status'] !== Booking::STATUS_CANCELLED && !empty($booking['client_email'])) {
+            $mailService = new BookingMailService();
+            $emailSent = $mailService->sendCancellationEmail($booking);
+        }
+
         Booking::delete($id);
 
         AuditService::log(
@@ -282,10 +302,10 @@ class BookingController
             'booking',
             $id,
             $booking,
-            null
+            ['email_sent' => $emailSent]
         );
 
-        Response::success(null, 'Réservation supprimée');
+        Response::success(['email_sent' => $emailSent], 'Réservation supprimée');
     }
 
     /**

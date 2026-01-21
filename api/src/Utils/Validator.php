@@ -25,7 +25,7 @@ class Validator
     public function email(string $field, string $message = null): self
     {
         if (isset($this->data[$field]) && !filter_var($this->data[$field], FILTER_VALIDATE_EMAIL)) {
-            $this->errors[$field] = $message ?? "Le champ {$field} doit être un email valide";
+            $this->errors[$field] = $message ?? "Adresse email invalide";
         }
         return $this;
     }
@@ -102,7 +102,7 @@ class Validator
         if (isset($this->data[$field]) && !empty($this->data[$field])) {
             $phone = preg_replace('/[\s\-\.]/', '', $this->data[$field]);
             if (!preg_match('/^\+?[0-9]{10,15}$/', $phone)) {
-                $this->errors[$field] = $message ?? "Le champ {$field} doit être un numéro de téléphone valide";
+                $this->errors[$field] = $message ?? "Numéro de téléphone invalide. Format attendu : 06 12 34 56 78";
             }
         }
         return $this;

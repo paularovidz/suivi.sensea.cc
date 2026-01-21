@@ -71,7 +71,9 @@ export const authApi = {
   requestMagicLink: (email) => api.post('/auth/request-magic-link', { email }),
   verifyMagicLink: (token) => api.get(`/auth/verify/${token}`),
   refresh: (refreshToken) => api.post('/auth/refresh', { refresh_token: refreshToken }),
-  logout: (refreshToken) => api.post('/auth/logout', { refresh_token: refreshToken })
+  logout: (refreshToken) => api.post('/auth/logout', { refresh_token: refreshToken }),
+  impersonate: (userId) => api.post(`/auth/impersonate/${userId}`),
+  stopImpersonate: () => api.post('/auth/stop-impersonate')
 }
 
 // Users API

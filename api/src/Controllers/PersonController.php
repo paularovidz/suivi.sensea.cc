@@ -32,8 +32,12 @@ class PersonController
             $total = Person::countByUser($currentUser['id']);
         }
 
-        // Add age to each person
-        $persons = array_map([Person::class, 'withAge'], $persons);
+        // Add age and stats to each person
+        $persons = array_map(function($person) {
+            $person = Person::withAge($person);
+            $person['stats'] = Session::getStats($person['id']);
+            return $person;
+        }, $persons);
 
         Response::success([
             'persons' => $persons,

@@ -436,6 +436,36 @@ export const useBookingStore = defineStore('booking', () => {
     }
   }
 
+  // Reset date/time selection (step 3)
+  function resetDateTimeSelection() {
+    selectedDate.value = null
+    selectedTime.value = null
+    availableDates.value = []
+    availableSlots.value = []
+  }
+
+  // Reset contact info (step 4) - for when changing client/identity
+  function resetContactInfo() {
+    clientInfo.value = {
+      email: clientInfo.value.email, // Keep email as it's used for lookup
+      phone: '',
+      firstName: '',
+      lastName: '',
+      clientType: 'personal',
+      companyName: '',
+      siret: ''
+    }
+    gdprConsent.value = false
+    existingClientInfo.value = null
+  }
+
+  // Reset all steps following person selection (steps 3, 4, 5)
+  function resetFollowingSteps() {
+    resetDateTimeSelection()
+    resetContactInfo()
+    bookingResult.value = null
+  }
+
   return {
     // State
     currentStep,
@@ -486,6 +516,9 @@ export const useBookingStore = defineStore('booking', () => {
     clearStorage,
     resetWizard,
     setDurationType,
-    setCaptchaToken
+    setCaptchaToken,
+    resetDateTimeSelection,
+    resetContactInfo,
+    resetFollowingSteps
   }
 })

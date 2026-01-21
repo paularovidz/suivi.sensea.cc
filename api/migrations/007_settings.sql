@@ -34,6 +34,6 @@ INSERT INTO `settings` (`key`, `value`, `type`, `label`, `description`, `categor
 
 -- SMS settings
 ('sms_reminders_enabled', '1', 'boolean', 'Rappels SMS activés', 'Envoyer des rappels SMS la veille des rendez-vous', 'sms'),
-('sms_sender_name', 'Sensea', 'string', 'Nom expéditeur SMS', 'Nom affiché comme expéditeur des SMS', 'sms')
+('sms_sender_name', 'sensëa', 'string', 'Nom expéditeur SMS', 'Nom affiché comme expéditeur des SMS', 'sms')
 
 ON DUPLICATE KEY UPDATE `key` = `key`;

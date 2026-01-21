@@ -339,20 +339,30 @@ class SessionController
 
     public function stats(): void
     {
-        AuthMiddleware::requireAdmin();
+        AuthMiddleware::handle();
+
+        $currentUser = AuthMiddleware::getCurrentUser();
+        $isAdmin = AuthMiddleware::isAdmin();
 
         $year = (int)($_GET['year'] ?? date('Y'));
         $month = (int)($_GET['month'] ?? date('n'));
 
-        $globalStats = Session::getGlobalStats();
-        $calendarData = Session::getCalendarData($year, $month);
+        // Admin sees all sessions, users see only their assigned persons' sessions
+        $userId = $isAdmin ? null : $currentUser['id'];
+        $calendarData = Session::getCalendarData($year, $month, $userId);
 
-        Response::success([
-            'stats' => $globalStats,
+        $response = [
             'calendar' => $calendarData,
             'year' => $year,
             'month' => $month
-        ]);
+        ];
+
+        // Only admin gets global stats
+        if ($isAdmin) {
+            $response['stats'] = Session::getGlobalStats();
+        }
+
+        Response::success($response);
     }
 
     public function personStats(string $personId): void

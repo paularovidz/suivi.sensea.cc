@@ -33,10 +33,6 @@ async function loadPage(page) {
   <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Personnes</h1>
-        <p class="text-gray-600 mt-1">Personnes suivies en séances Snoezelen</p>
-      </div>
       <RouterLink v-if="authStore.isAdmin" to="/app/persons/new" class="btn-primary">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -59,33 +55,33 @@ async function loadPage(page) {
         </RouterLink>
       </EmptyState>
 
-      <div v-else class="card overflow-hidden">
-        <table class="table">
+      <div v-else class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <table class="w-full text-sm text-left">
           <thead>
-            <tr>
-              <th>Nom</th>
-              <th>Âge</th>
-              <th>Séances</th>
-              <th class="text-right">Actions</th>
+            <tr class="bg-gray-800/50">
+              <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Nom</th>
+              <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Âge</th>
+              <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Séances</th>
+              <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="person in personsStore.persons" :key="person.id">
-              <td>
-                <RouterLink :to="`/app/persons/${person.id}`" class="flex items-center hover:text-primary-600">
-                  <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-medium text-sm mr-3">
+            <tr v-for="person in personsStore.persons" :key="person.id" class="border-t border-gray-700 hover:bg-gray-700/50">
+              <td class="px-4 py-3">
+                <RouterLink :to="`/app/persons/${person.id}`" class="flex items-center hover:text-primary-400">
+                  <div class="w-8 h-8 rounded-full bg-primary-900/50 flex items-center justify-center text-primary-400 font-medium text-sm mr-3">
                     {{ person.first_name[0] }}{{ person.last_name[0] }}
                   </div>
-                  <span class="font-medium">{{ person.first_name }} {{ person.last_name }}</span>
+                  <span class="font-medium text-gray-100">{{ person.first_name }} {{ person.last_name }}</span>
                 </RouterLink>
               </td>
-              <td>{{ person.age ? person.age + ' ans' : '-' }}</td>
-              <td>
-                <RouterLink :to="`/app/persons/${person.id}`" class="text-primary-600 hover:text-primary-700">
+              <td class="px-4 py-3 text-gray-300">{{ person.age ? person.age + ' ans' : '-' }}</td>
+              <td class="px-4 py-3">
+                <RouterLink :to="`/app/persons/${person.id}`" class="text-primary-400 hover:text-primary-300">
                   Voir les séances
                 </RouterLink>
               </td>
-              <td class="text-right">
+              <td class="px-4 py-3 text-right">
                 <RouterLink :to="`/app/sessions/new/${person.id}`" class="btn-primary btn-sm">
                   Nouvelle séance
                 </RouterLink>
@@ -95,8 +91,8 @@ async function loadPage(page) {
         </table>
 
         <!-- Pagination -->
-        <div v-if="personsStore.pagination.pages > 1" class="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-          <div class="text-sm text-gray-500">
+        <div v-if="personsStore.pagination.pages > 1" class="px-4 py-3 border-t border-gray-700 flex items-center justify-between">
+          <div class="text-sm text-gray-400">
             {{ personsStore.pagination.total }} personne(s)
           </div>
           <div class="flex space-x-2">
@@ -108,7 +104,7 @@ async function loadPage(page) {
                 'px-3 py-1 text-sm rounded',
                 page === personsStore.pagination.page
                   ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               ]"
             >
               {{ page }}

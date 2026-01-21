@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Config\Database;
 use App\Models\Booking;
+use App\Models\Session;
 use App\Models\Setting;
 
 /**
@@ -133,8 +134,15 @@ class AvailabilityService
 
     /**
      * Génère dynamiquement les créneaux possibles pour une journée
-     * Les créneaux sont calculés à partir du premier slot + durée bloquée
-     * en prenant en compte la pause déjeuner
+     * Les créneaux sont calculés en "remplissant" la journée séquentiellement,
+     * en tenant compte des réservations/séances existantes.
+     *
+     * Quand un créneau chevauche une réservation existante, on saute directement
+     * à la fin de cette réservation pour proposer le prochain créneau disponible.
+     *
+     * Note: Pour la vérification de la fin de journée et la pause déjeuner,
+     * on utilise uniquement la durée de la séance (display), pas la pause inter-séance.
+     * Ce n'est pas grave si la pause déborde légèrement sur ces périodes.
      */
     private static function generatePossibleSlots(\DateTime $date, string $durationType): array
     {
@@ -146,7 +154,8 @@ class AvailabilityService
         $timezone = new \DateTimeZone(self::env('APP_TIMEZONE', 'Europe/Paris'));
         $dateStr = $date->format('Y-m-d');
         $durations = self::getDurations($durationType);
-        $blockedDuration = $durations['blocked'];
+        $displayDuration = $durations['display']; // Durée de la séance seule
+        $blockedDuration = $durations['blocked']; // Durée totale (séance + pause)
         $lunch = self::getLunchBreak();
 
         // Récupérer l'heure du premier créneau
@@ -168,24 +177,48 @@ class AvailabilityService
         $lunchStart = new \DateTime("$dateStr {$lunch['start']}", $timezone);
         $lunchEnd = new \DateTime("$dateStr {$lunch['end']}", $timezone);
 
+        // Récupérer tous les événements bloquants pour cette journée
+        $blockedSlots = self::getBlockedSlotsForDate($date, $timezone);
+
         $slots = [];
 
         while (true) {
-            $slotEnd = (clone $current)->modify("+{$blockedDuration} minutes");
+            // Fin de la séance (sans la pause inter-séance)
+            $sessionEnd = (clone $current)->modify("+{$displayDuration} minutes");
 
-            // Le créneau ne doit pas dépasser l'heure de fermeture
-            if ($slotEnd > $closeTime) {
+            // La séance elle-même ne doit pas dépasser l'heure de fermeture
+            // (la pause inter-séance peut déborder, ce n'est pas grave)
+            if ($sessionEnd > $closeTime) {
                 break;
             }
 
-            // Vérifier si le créneau chevauche la pause déjeuner
-            $overlapsLunch = ($current < $lunchEnd && $slotEnd > $lunchStart);
+            // Vérifier si la SÉANCE (pas la pause) chevauche la pause déjeuner
+            $overlapsLunch = ($current < $lunchEnd && $sessionEnd > $lunchStart);
 
-            if (!$overlapsLunch) {
-                $slots[] = $current->format('H:i');
+            if ($overlapsLunch) {
+                // Sauter à la fin de la pause déjeuner
+                $current = clone $lunchEnd;
+                continue;
             }
 
-            // Passer au créneau suivant
+            // Vérifier les conflits avec les événements bloquants
+            $slotEnd = (clone $current)->modify("+{$blockedDuration} minutes");
+            $conflictEnd = self::findConflictEnd($current, $slotEnd, $blockedSlots);
+
+            if ($conflictEnd !== null) {
+                // Il y a un conflit : sauter à la fin de l'événement bloquant
+                $current = clone $conflictEnd;
+                // Si on tombe dans la pause déjeuner, sauter à la fin
+                if ($current >= $lunchStart && $current < $lunchEnd) {
+                    $current = clone $lunchEnd;
+                }
+                continue;
+            }
+
+            // Pas de conflit : ce créneau est disponible
+            $slots[] = $current->format('H:i');
+
+            // Passer au créneau suivant (en utilisant la durée bloquée complète)
             $current->modify("+{$blockedDuration} minutes");
 
             // Si on est dans la pause déjeuner, sauter à la fin de la pause
@@ -195,6 +228,75 @@ class AvailabilityService
         }
 
         return $slots;
+    }
+
+    /**
+     * Récupère tous les événements bloquants pour une date donnée
+     * (réservations, séances sans booking, événements Google Calendar)
+     *
+     * @return array Liste de ['start' => DateTime, 'end' => DateTime, 'all_day' => bool]
+     */
+    private static function getBlockedSlotsForDate(\DateTime $date, \DateTimeZone $timezone): array
+    {
+        $blockedSlots = [];
+
+        // Réservations en BDD (non annulées)
+        $bookings = Booking::getBookingsForDate($date);
+        foreach ($bookings as $booking) {
+            $start = new \DateTime($booking['session_date'], $timezone);
+            $end = (clone $start)->modify("+{$booking['duration_blocked_minutes']} minutes");
+            $blockedSlots[] = ['start' => $start, 'end' => $end, 'all_day' => false];
+        }
+
+        // Séances existantes (sans booking, pour éviter les doublons)
+        $sessions = Session::getSessionsForDate($date);
+        foreach ($sessions as $session) {
+            // Ignorer les séances qui ont déjà un booking (déjà comptées ci-dessus)
+            if (!empty($session['booking_id'])) {
+                continue;
+            }
+            $start = new \DateTime($session['session_date'], $timezone);
+            $pause = self::getPauseForSessionDuration($session['duration_minutes']);
+            $totalBlocked = $session['duration_minutes'] + $pause;
+            $end = (clone $start)->modify("+{$totalBlocked} minutes");
+            $blockedSlots[] = ['start' => $start, 'end' => $end, 'all_day' => false];
+        }
+
+        // Événements Google Calendar
+        $calendarEvents = CalendarService::getEventsForDate($date);
+        foreach ($calendarEvents as $event) {
+            $blockedSlots[] = [
+                'start' => $event['start'],
+                'end' => $event['end'],
+                'all_day' => $event['is_all_day'] ?? false
+            ];
+        }
+
+        return $blockedSlots;
+    }
+
+    /**
+     * Trouve la fin d'un conflit s'il y en a un
+     *
+     * @return \DateTime|null La fin de l'événement en conflit, ou null si pas de conflit
+     */
+    private static function findConflictEnd(\DateTime $slotStart, \DateTime $slotEnd, array $blockedSlots): ?\DateTime
+    {
+        foreach ($blockedSlots as $blocked) {
+            // Si c'est un événement toute la journée, on ne peut pas proposer de créneau
+            // (sera géré par isSlotAvailable qui retournera false)
+            if ($blocked['all_day'] ?? false) {
+                continue;
+            }
+
+            // Vérifier le chevauchement : slot et blocked se chevauchent si
+            // slotStart < blocked['end'] ET slotEnd > blocked['start']
+            if ($slotStart < $blocked['end'] && $slotEnd > $blocked['start']) {
+                return $blocked['end'];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -257,6 +359,9 @@ class AvailabilityService
         // Récupérer les réservations existantes pour cette journée
         $existingBookings = Booking::getBookingsForDate($date);
 
+        // Récupérer les séances existantes pour cette journée
+        $existingSessions = Session::getSessionsForDate($date);
+
         // Récupérer les événements du calendrier Google
         $calendarEvents = CalendarService::getEventsForDate($date);
 
@@ -275,7 +380,7 @@ class AvailabilityService
             }
 
             // Vérifier la disponibilité
-            if (self::isSlotAvailableWithData($slotStart, $slotEnd, $existingBookings, $calendarEvents)) {
+            if (self::isSlotAvailableWithData($slotStart, $slotEnd, $existingBookings, $existingSessions, $calendarEvents)) {
                 $availableSlots[] = [
                     'time' => $slotStart->format('H:i'),
                     'datetime' => $slotStart->format('Y-m-d H:i:s'),
@@ -288,21 +393,56 @@ class AvailabilityService
     }
 
     /**
+     * Détermine la pause appropriée pour une séance en fonction de sa durée
+     */
+    private static function getPauseForSessionDuration(int $durationMinutes): int
+    {
+        $discoveryDisplay = Setting::getInteger('session_discovery_display_minutes', self::DEFAULT_DISCOVERY_DISPLAY);
+        $discoveryPause = Setting::getInteger('session_discovery_pause_minutes', self::DEFAULT_DISCOVERY_PAUSE);
+        $regularPause = Setting::getInteger('session_regular_pause_minutes', self::DEFAULT_REGULAR_PAUSE);
+
+        // Si la durée correspond à une séance découverte, utiliser la pause découverte
+        // Sinon utiliser la pause classique
+        if ($durationMinutes >= $discoveryDisplay) {
+            return $discoveryPause;
+        }
+
+        return $regularPause;
+    }
+
+    /**
      * Vérifie si un créneau est disponible avec les données pré-chargées
      */
     private static function isSlotAvailableWithData(
         \DateTime $start,
         \DateTime $end,
         array $bookings,
+        array $sessions,
         array $calendarEvents
     ): bool {
+        $timezone = new \DateTimeZone(self::env('APP_TIMEZONE', 'Europe/Paris'));
+
         // Vérifier les réservations
         foreach ($bookings as $booking) {
-            $bookingStart = new \DateTime($booking['session_date']);
+            $bookingStart = new \DateTime($booking['session_date'], $timezone);
             $bookingEnd = (clone $bookingStart)->modify("+{$booking['duration_blocked_minutes']} minutes");
 
             // Vérifier le chevauchement
             if ($start < $bookingEnd && $end > $bookingStart) {
+                return false;
+            }
+        }
+
+        // Vérifier les séances existantes
+        foreach ($sessions as $session) {
+            $sessionStart = new \DateTime($session['session_date'], $timezone);
+            // Durée de la séance + pause appropriée selon le type de séance
+            $pause = self::getPauseForSessionDuration($session['duration_minutes']);
+            $sessionBlockedMinutes = $session['duration_minutes'] + $pause;
+            $sessionEnd = (clone $sessionStart)->modify("+{$sessionBlockedMinutes} minutes");
+
+            // Vérifier le chevauchement
+            if ($start < $sessionEnd && $end > $sessionStart) {
                 return false;
             }
         }
@@ -327,7 +467,7 @@ class AvailabilityService
     }
 
     /**
-     * Vérifie si un créneau est disponible (ni bloqué par Google Calendar, ni par une réservation)
+     * Vérifie si un créneau est disponible (ni bloqué par Google Calendar, ni par une réservation, ni par une séance)
      */
     public static function isSlotAvailable(\DateTime $start, \DateTime $end): bool
     {
@@ -341,12 +481,44 @@ class AvailabilityService
             return false;
         }
 
+        // 3. Vérifier les séances existantes
+        if (self::isSlotBlockedBySession($start, $end)) {
+            return false;
+        }
+
         return true;
+    }
+
+    /**
+     * Vérifie si un créneau chevauche une séance existante
+     */
+    private static function isSlotBlockedBySession(\DateTime $start, \DateTime $end): bool
+    {
+        $timezone = new \DateTimeZone(self::env('APP_TIMEZONE', 'Europe/Paris'));
+        $sessions = Session::getSessionsForDate($start);
+
+        foreach ($sessions as $session) {
+            $sessionStart = new \DateTime($session['session_date'], $timezone);
+            // Utiliser la pause appropriée selon le type de séance
+            $pause = self::getPauseForSessionDuration($session['duration_minutes']);
+            $sessionBlockedMinutes = $session['duration_minutes'] + $pause;
+            $sessionEnd = (clone $sessionStart)->modify("+{$sessionBlockedMinutes} minutes");
+
+            // Vérifier le chevauchement
+            if ($start < $sessionEnd && $end > $sessionStart) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
      * Vérifie qu'un créneau demandé est valide et disponible
      * Retourne un tableau d'erreurs ou un tableau vide si OK
+     *
+     * Note: Pour la vérification de fin de journée, on utilise la durée de la séance seule,
+     * pas la pause inter-séance. La pause peut déborder légèrement.
      */
     public static function validateSlot(\DateTime $requestedDateTime, string $durationType): array
     {
@@ -377,12 +549,13 @@ class AvailabilityService
             return $errors;
         }
 
-        // 4. Calculer l'heure de fin avec la durée bloquée
+        // 4. Calculer l'heure de fin de la SÉANCE (sans la pause inter-séance)
+        // La pause peut déborder sur la fermeture, ce n'est pas grave
         $durations = self::getDurations($durationType);
-        $slotEnd = (clone $requestedDateTime)->modify("+{$durations['blocked']} minutes");
+        $sessionEnd = (clone $requestedDateTime)->modify("+{$durations['display']} minutes");
 
-        if ($slotEnd > $closeTime) {
-            $errors[] = "Le créneau dépasse l'heure de fermeture ({$businessHours['close']})";
+        if ($sessionEnd > $closeTime) {
+            $errors[] = "La séance dépasse l'heure de fermeture ({$businessHours['close']})";
             return $errors;
         }
 
@@ -395,7 +568,8 @@ class AvailabilityService
             return $errors;
         }
 
-        // 6. Vérifier la disponibilité effective
+        // 6. Vérifier la disponibilité effective (avec la durée bloquée complète pour les conflits)
+        $slotEnd = (clone $requestedDateTime)->modify("+{$durations['blocked']} minutes");
         if (!self::isSlotAvailable($requestedDateTime, $slotEnd)) {
             $errors[] = 'Ce créneau n\'est plus disponible';
             return $errors;

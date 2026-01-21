@@ -2,11 +2,12 @@
 import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
-  // Legacy prop - kept for backward compatibility but no longer used
+  // Sessions data (for past days and today)
   data: {
     type: Object,
     default: () => ({})
   },
+  // Bookings data (for future days)
   bookingsData: {
     type: Object,
     default: () => ({})
@@ -30,6 +31,16 @@ const months = [
 
 const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
+const today = computed(() => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+})
+
+// Check if a date is in the future (after today)
+function isFutureDate(dateStr) {
+  return dateStr > today.value
+}
+
 const calendarDays = computed(() => {
   const year = props.year
   const month = props.month - 1 // JS months are 0-indexed
@@ -46,42 +57,56 @@ const calendarDays = computed(() => {
 
   // Add empty cells for days before the first of the month
   for (let i = 0; i < startDayOfWeek; i++) {
-    result.push({ day: null, bookingCount: 0 })
+    result.push({ day: null, count: 0, type: null })
   }
 
-  // Add days of the month - only count bookings, not sessions
+  // Add days of the month
+  // - Past days & today: show sessions count
+  // - Future days: show bookings count
   for (let day = 1; day <= daysInMonth; day++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    const bookingCount = props.bookingsData[dateStr] || 0
-    result.push({ day, bookingCount, date: dateStr })
+    const isFuture = isFutureDate(dateStr)
+
+    let count, type
+    if (isFuture) {
+      // Future: show bookings (RDV à venir)
+      count = props.bookingsData[dateStr] || 0
+      type = 'booking'
+    } else {
+      // Past or today: show sessions (séances effectuées)
+      count = props.data[dateStr] || 0
+      type = 'session'
+    }
+
+    result.push({ day, count, date: dateStr, type })
   }
 
   return result
 })
 
-const today = computed(() => {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-})
-
-// Check if there are any bookings in the current month
-const hasBookings = computed(() => {
-  return Object.keys(props.bookingsData).length > 0
-})
-
 function getBackgroundClass(cell) {
-  const count = cell.bookingCount
-  if (count === 0) return 'bg-gray-50'
-  if (count === 1) return 'bg-amber-100'
-  if (count === 2) return 'bg-amber-200'
-  if (count <= 3) return 'bg-amber-300'
-  if (count <= 5) return 'bg-amber-400'
-  return 'bg-amber-500'
+  const count = cell.count
+  if (count === 0) return 'bg-gray-700/50'
+
+  // Different colors for sessions (green) and bookings (amber)
+  if (cell.type === 'session') {
+    if (count === 1) return 'bg-green-900/60'
+    if (count === 2) return 'bg-green-800/70'
+    if (count <= 3) return 'bg-green-700/80'
+    if (count <= 5) return 'bg-green-600'
+    return 'bg-green-500'
+  } else {
+    if (count === 1) return 'bg-amber-900/60'
+    if (count === 2) return 'bg-amber-800/70'
+    if (count <= 3) return 'bg-amber-700/80'
+    if (count <= 5) return 'bg-amber-600'
+    return 'bg-amber-500'
+  }
 }
 
 function getTextClass(cell) {
-  const count = cell.bookingCount
-  return count > 4 ? 'text-white' : 'text-gray-700'
+  const count = cell.count
+  return count > 2 ? 'text-white' : 'text-gray-300'
 }
 
 function prevMonth() {
@@ -106,17 +131,17 @@ function nextMonth() {
 </script>
 
 <template>
-  <div class="bg-white rounded-xl border border-gray-100 p-4">
+  <div class="p-2">
     <!-- Header -->
     <div class="flex items-center justify-between mb-4">
-      <button @click="prevMonth" class="p-1 hover:bg-gray-100 rounded">
-        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button @click="prevMonth" class="p-1 hover:bg-gray-700 rounded">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
-      <h3 class="font-semibold text-gray-900">{{ months[month - 1] }} {{ year }}</h3>
-      <button @click="nextMonth" class="p-1 hover:bg-gray-100 rounded">
-        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <h3 class="font-semibold text-white">{{ months[month - 1] }} {{ year }}</h3>
+      <button @click="nextMonth" class="p-1 hover:bg-gray-700 rounded">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </button>
@@ -137,33 +162,32 @@ function nextMonth() {
         :class="[
           'aspect-square flex flex-col items-center justify-center text-sm rounded-lg transition-colors relative',
           cell.day ? getBackgroundClass(cell) : '',
-          cell.date === today ? 'ring-2 ring-amber-500' : ''
+          cell.date === today ? 'ring-2 ring-primary-500' : ''
         ]"
-        :title="cell.day && cell.bookingCount > 0 ? `${cell.bookingCount} RDV` : ''"
+        :title="cell.day && cell.count > 0 ? `${cell.count} ${cell.type === 'session' ? 'séance(s)' : 'RDV'}` : ''"
       >
         <span v-if="cell.day" :class="getTextClass(cell)">
           {{ cell.day }}
         </span>
-        <!-- Indicator for bookings count -->
-        <div v-if="cell.day && cell.bookingCount > 0" class="text-[10px] font-medium" :class="getTextClass(cell)">
-          {{ cell.bookingCount }}
+        <!-- Indicator for count -->
+        <div v-if="cell.day && cell.count > 0" class="text-[10px] font-medium" :class="getTextClass(cell)">
+          {{ cell.count }}
         </div>
       </div>
     </div>
 
     <!-- Legend -->
-    <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-4 text-xs text-gray-500">
-      <div class="flex items-center gap-1">
-        <span>0</span>
-        <div class="w-4 h-4 rounded bg-gray-50 border border-gray-200"></div>
-        <div class="w-4 h-4 rounded bg-amber-100"></div>
-        <div class="w-4 h-4 rounded bg-amber-200"></div>
-        <div class="w-4 h-4 rounded bg-amber-300"></div>
-        <div class="w-4 h-4 rounded bg-amber-400"></div>
-        <div class="w-4 h-4 rounded bg-amber-500"></div>
-        <span>5+</span>
+    <div class="flex flex-col items-center gap-2 mt-4 text-xs text-gray-400">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1">
+          <div class="w-4 h-4 rounded bg-green-800 border border-green-700"></div>
+          <span>Séances (passé)</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <div class="w-4 h-4 rounded bg-amber-800 border border-amber-700"></div>
+          <span>RDV (futur)</span>
+        </div>
       </div>
-      <div class="text-gray-400">Nombre de RDV par jour</div>
     </div>
   </div>
 </template>

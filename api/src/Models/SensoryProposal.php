@@ -53,26 +53,7 @@ class SensoryProposal
         return $stmt->fetchAll();
     }
 
-    public static function findAccessible(string $userId, int $limit = 100, int $offset = 0): array
-    {
-        $db = Database::getInstance();
-        $stmt = $db->prepare('
-            SELECT sp.*, u.first_name as creator_first_name, u.last_name as creator_last_name
-            FROM sensory_proposals sp
-            LEFT JOIN users u ON sp.created_by = u.id
-            WHERE sp.is_global = 1 OR sp.created_by = :user_id
-            ORDER BY sp.type, sp.title
-            LIMIT :limit OFFSET :offset
-        ');
-        $stmt->bindValue(':user_id', $userId);
-        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-        $stmt->execute();
-
-        return $stmt->fetchAll();
-    }
-
-    public static function search(string $query, ?string $type = null, ?string $userId = null, int $limit = 20): array
+    public static function search(string $query, ?string $type = null, int $limit = 20): array
     {
         $db = Database::getInstance();
 
@@ -95,11 +76,6 @@ class SensoryProposal
             $params['type'] = $type;
         }
 
-        if ($userId) {
-            $sql .= ' AND (sp.is_global = 1 OR sp.created_by = :user_id)';
-            $params['user_id'] = $userId;
-        }
-
         $sql .= ' ORDER BY sp.title LIMIT :limit';
 
         $stmt = $db->prepare($sql);
@@ -114,31 +90,20 @@ class SensoryProposal
         return $stmt->fetchAll();
     }
 
-    public static function findByType(string $type, ?string $userId = null, int $limit = 100): array
+    public static function findByType(string $type, int $limit = 100): array
     {
         $db = Database::getInstance();
 
-        $sql = '
+        $stmt = $db->prepare('
             SELECT sp.*, u.first_name as creator_first_name, u.last_name as creator_last_name
             FROM sensory_proposals sp
             LEFT JOIN users u ON sp.created_by = u.id
             WHERE sp.type = :type
-        ';
+            ORDER BY sp.title
+            LIMIT :limit
+        ');
 
-        $params = ['type' => $type];
-
-        if ($userId) {
-            $sql .= ' AND (sp.is_global = 1 OR sp.created_by = :user_id)';
-            $params['user_id'] = $userId;
-        }
-
-        $sql .= ' ORDER BY sp.title LIMIT :limit';
-
-        $stmt = $db->prepare($sql);
-
-        foreach ($params as $key => $value) {
-            $stmt->bindValue(':' . $key, $value);
-        }
+        $stmt->bindValue(':type', $type);
         $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
 
         $stmt->execute();
@@ -159,8 +124,8 @@ class SensoryProposal
         $id = UUID::generate();
 
         $stmt = $db->prepare('
-            INSERT INTO sensory_proposals (id, title, type, description, created_by, is_global)
-            VALUES (:id, :title, :type, :description, :created_by, :is_global)
+            INSERT INTO sensory_proposals (id, title, type, description, created_by)
+            VALUES (:id, :title, :type, :description, :created_by)
         ');
 
         $stmt->execute([
@@ -168,8 +133,7 @@ class SensoryProposal
             'title' => trim($data['title']),
             'type' => $data['type'],
             'description' => isset($data['description']) ? trim($data['description']) : null,
-            'created_by' => $data['created_by'],
-            'is_global' => !empty($data['is_global']) ? 1 : 0
+            'created_by' => $data['created_by']
         ]);
 
         return $id;
@@ -182,7 +146,7 @@ class SensoryProposal
         $fields = [];
         $params = ['id' => $id];
 
-        $allowedFields = ['title', 'type', 'description', 'is_global'];
+        $allowedFields = ['title', 'type', 'description'];
 
         foreach ($allowedFields as $field) {
             if (array_key_exists($field, $data)) {
@@ -221,20 +185,6 @@ class SensoryProposal
 
         $stmt = $db->prepare('DELETE FROM sensory_proposals WHERE id = :id');
         return $stmt->execute(['id' => $id]);
-    }
-
-    public static function canAccess(string $id, string $userId, bool $isAdmin): bool
-    {
-        if ($isAdmin) {
-            return true;
-        }
-
-        $proposal = self::findById($id);
-        if (!$proposal) {
-            return false;
-        }
-
-        return $proposal['is_global'] || $proposal['created_by'] === $userId;
     }
 
     public static function canModify(string $id, string $userId, bool $isAdmin): bool

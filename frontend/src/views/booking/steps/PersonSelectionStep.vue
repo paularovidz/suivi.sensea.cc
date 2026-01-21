@@ -188,8 +188,10 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useBookingStore } from '@/stores/booking'
+import { useToastStore } from '@/stores/toast'
 
 const bookingStore = useBookingStore()
+const toastStore = useToastStore()
 
 const emailLookup = ref('')
 const hasSearched = ref(false)
@@ -205,8 +207,16 @@ watch(() => bookingStore.clientInfo.email, (email) => {
 async function lookupEmail() {
   if (!emailLookup.value) return
 
+  // Reset following steps when changing email/client
+  bookingStore.resetFollowingSteps()
+
   // Store email for later use in contact step
   bookingStore.clientInfo.email = emailLookup.value
+
+  // Reset person selection
+  bookingStore.selectedPersonId = null
+  bookingStore.newPerson = { firstName: '', lastName: '' }
+  showNewPersonForm.value = false
 
   try {
     await bookingStore.fetchPersonsByEmail(emailLookup.value)
@@ -219,10 +229,15 @@ async function lookupEmail() {
   } catch (err) {
     hasSearched.value = true
     showNewPersonForm.value = true
+    toastStore.apiError(err, 'Erreur lors de la recherche')
   }
 }
 
 function selectPerson(person) {
+  // Reset date/time if selecting a different person
+  if (bookingStore.selectedPersonId !== person.id) {
+    bookingStore.resetDateTimeSelection()
+  }
   bookingStore.selectedPersonId = person.id
   bookingStore.newPerson = { firstName: '', lastName: '' }
   showNewPersonForm.value = false

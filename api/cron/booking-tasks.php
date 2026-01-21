@@ -4,17 +4,17 @@
  * Tâches planifiées pour le système de réservation
  *
  * À exécuter via cron, par exemple :
- * */15 * * * * php /path/to/api/cron/booking-tasks.php >> /var/log/sensea-booking.log 2>&1
+ *   Toutes les 15 min : 0,15,30,45 * * * * php booking-tasks.php >> /var/log/sensea-booking.log 2>&1
  *
  * Ou pour des tâches spécifiques :
- * # Création des sessions (tous les matins à 6h)
- * 0 6 * * * php /path/to/api/cron/booking-tasks.php create-sessions
+ *   Création des sessions (tous les matins à 6h) :
+ *     0 6 * * * php booking-tasks.php create-sessions
  *
- * # Envoi des rappels (tous les jours à 18h)
- * 0 18 * * * php /path/to/api/cron/booking-tasks.php send-reminders
+ *   Envoi des rappels (tous les jours à 18h) :
+ *     0 18 * * * php booking-tasks.php send-reminders
  *
- * # Rafraîchissement du cache calendrier (toutes les 5 minutes)
- * */5 * * * * php /path/to/api/cron/booking-tasks.php refresh-calendar
+ *   Rafraîchissement du cache calendrier (toutes les 5 minutes) :
+ *     0,5,10,15,20,25,30,35,40,45,50,55 * * * * php booking-tasks.php refresh-calendar
  */
 
 declare(strict_types=1);

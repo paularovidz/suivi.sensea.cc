@@ -10,6 +10,7 @@ use App\Models\RefreshToken;
 use App\Services\JWTService;
 use App\Services\MailService;
 use App\Services\AuditService;
+use App\Middleware\AuthMiddleware;
 use App\Utils\Response;
 use App\Utils\Validator;
 
@@ -108,7 +109,10 @@ class AuthController
                 'login' => $user['login'],
                 'first_name' => $user['first_name'],
                 'last_name' => $user['last_name'],
-                'role' => $user['role']
+                'role' => $user['role'],
+                'client_type' => $user['client_type'] ?? 'personal',
+                'company_name' => $user['company_name'] ?? null,
+                'siret' => $user['siret'] ?? null
             ]
         ], 'Connexion réussie');
     }
@@ -134,6 +138,16 @@ class AuthController
             Response::unauthorized('Compte désactivé');
         }
 
+        // Check if there's an impersonation state to preserve from the old access token
+        $impersonatorId = null;
+        $oldToken = JWTService::extractTokenFromHeader();
+        if ($oldToken) {
+            $oldPayload = JWTService::verifyAccessToken($oldToken);
+            if ($oldPayload && !empty($oldPayload['impersonator_id'])) {
+                $impersonatorId = $oldPayload['impersonator_id'];
+            }
+        }
+
         // Rotate refresh token
         $newRefreshToken = RefreshToken::rotate(
             $data['refresh_token'],
@@ -141,12 +155,16 @@ class AuthController
             $_SERVER['HTTP_USER_AGENT'] ?? null
         );
 
-        // Generate new access token
-        $accessToken = JWTService::generateAccessToken([
+        // Generate new access token (preserve impersonation state if present)
+        $tokenPayload = [
             'user_id' => $user['id'],
             'email' => $user['email'],
             'role' => $user['role']
-        ]);
+        ];
+        if ($impersonatorId) {
+            $tokenPayload['impersonator_id'] = $impersonatorId;
+        }
+        $accessToken = JWTService::generateAccessToken($tokenPayload);
 
         Response::success([
             'access_token' => $accessToken,
@@ -173,5 +191,154 @@ class AuthController
         }
 
         Response::success(null, 'Déconnexion réussie');
+    }
+
+    /**
+     * Impersonate another user (admin only)
+     * Creates a new token with the target user's permissions but stores the original admin's ID
+     */
+    public function impersonate(string $userId): void
+    {
+        AuthMiddleware::requireAdmin();
+
+        $admin = AuthMiddleware::getCurrentUser();
+
+        // Cannot impersonate yourself
+        if ($admin['id'] === $userId) {
+            Response::error('Vous ne pouvez pas vous impersoner vous-même', 400);
+        }
+
+        // Get the target user
+        $targetUser = User::findById($userId);
+        if (!$targetUser || !$targetUser['is_active']) {
+            Response::notFound('Utilisateur non trouvé ou inactif');
+        }
+
+        // Generate new access token with impersonation info
+        $accessToken = JWTService::generateAccessToken([
+            'user_id' => $targetUser['id'],
+            'email' => $targetUser['email'],
+            'role' => $targetUser['role'],
+            'impersonator_id' => $admin['id'] // Store the original admin's ID
+        ]);
+
+        // Create a new refresh token for the impersonated session
+        $refreshToken = RefreshToken::create(
+            $targetUser['id'],
+            AuditService::getClientIp(),
+            $_SERVER['HTTP_USER_AGENT'] ?? null
+        );
+
+        // Audit log
+        AuditService::log(
+            $admin['id'],
+            'impersonation_started',
+            'user',
+            $targetUser['id'],
+            null,
+            [
+                'admin_id' => $admin['id'],
+                'admin_email' => $admin['email'],
+                'target_user_id' => $targetUser['id'],
+                'target_user_email' => $targetUser['email']
+            ]
+        );
+
+        Response::success([
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'expires_in' => JWTService::getAccessTokenExpiry(),
+            'user' => [
+                'id' => $targetUser['id'],
+                'email' => $targetUser['email'],
+                'login' => $targetUser['login'],
+                'first_name' => $targetUser['first_name'],
+                'last_name' => $targetUser['last_name'],
+                'role' => $targetUser['role'],
+                'client_type' => $targetUser['client_type'] ?? 'personal',
+                'company_name' => $targetUser['company_name'] ?? null,
+                'siret' => $targetUser['siret'] ?? null
+            ],
+            'impersonating' => true,
+            'impersonator' => [
+                'id' => $admin['id'],
+                'first_name' => $admin['first_name'],
+                'last_name' => $admin['last_name']
+            ]
+        ], 'Impersonation démarrée');
+    }
+
+    /**
+     * Stop impersonating and return to the original admin account
+     */
+    public function stopImpersonate(): void
+    {
+        AuthMiddleware::handle();
+
+        // Get impersonator ID from current token
+        $token = JWTService::extractTokenFromHeader();
+        $payload = JWTService::verifyAccessToken($token);
+
+        if (!$payload || empty($payload['impersonator_id'])) {
+            Response::error('Vous n\'êtes pas en mode impersonation', 400);
+        }
+
+        $impersonatorId = $payload['impersonator_id'];
+        $currentUserId = $payload['user_id'];
+
+        // Get the original admin user
+        $admin = User::findById($impersonatorId);
+        if (!$admin || !$admin['is_active']) {
+            Response::error('Compte administrateur non trouvé ou inactif', 400);
+        }
+
+        // Verify the admin is still an admin (security check)
+        if ($admin['role'] !== 'admin') {
+            Response::error('Le compte original n\'a plus les droits administrateur', 403);
+        }
+
+        // Generate new tokens for the original admin
+        $accessToken = JWTService::generateAccessToken([
+            'user_id' => $admin['id'],
+            'email' => $admin['email'],
+            'role' => $admin['role']
+        ]);
+
+        $refreshToken = RefreshToken::create(
+            $admin['id'],
+            AuditService::getClientIp(),
+            $_SERVER['HTTP_USER_AGENT'] ?? null
+        );
+
+        // Audit log
+        AuditService::log(
+            $admin['id'],
+            'impersonation_ended',
+            'user',
+            $currentUserId,
+            null,
+            [
+                'admin_id' => $admin['id'],
+                'admin_email' => $admin['email'],
+                'impersonated_user_id' => $currentUserId
+            ]
+        );
+
+        Response::success([
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'expires_in' => JWTService::getAccessTokenExpiry(),
+            'user' => [
+                'id' => $admin['id'],
+                'email' => $admin['email'],
+                'login' => $admin['login'],
+                'first_name' => $admin['first_name'],
+                'last_name' => $admin['last_name'],
+                'role' => $admin['role'],
+                'client_type' => $admin['client_type'] ?? 'personal',
+                'company_name' => $admin['company_name'] ?? null,
+                'siret' => $admin['siret'] ?? null
+            ]
+        ], 'Retour au compte administrateur');
     }
 }

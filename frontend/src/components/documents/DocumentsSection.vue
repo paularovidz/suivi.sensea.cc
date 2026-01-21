@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { documentsApi } from '@/services/api'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
@@ -14,6 +14,18 @@ const props = defineProps({
   entityId: {
     type: String,
     required: true
+  },
+  readonly: {
+    type: Boolean,
+    default: false
+  },
+  title: {
+    type: String,
+    default: 'Documents'
+  },
+  dark: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -30,18 +42,51 @@ const allowedExtensions = '.jpg,.jpeg,.png,.gif,.webp,.pdf'
 const maxSize = 10 * 1024 * 1024 // 10 MB
 
 onMounted(async () => {
-  await loadDocuments()
+  if (props.entityId) {
+    await loadDocuments()
+  } else {
+    loading.value = false
+  }
+})
+
+// Watch for entityId changes (in case it's not available on mount)
+watch(() => props.entityId, async (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    await loadDocuments()
+  }
 })
 
 async function loadDocuments() {
+  if (!props.entityId) {
+    loading.value = false
+    return
+  }
+
+  // Check if user is authenticated before making API call
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    loading.value = false
+    error.value = 'Non authentifié'
+    return
+  }
+
   loading.value = true
   error.value = ''
   try {
     const response = await documentsApi.list(props.type, props.entityId)
-    documents.value = response.data.data.documents
+    documents.value = response.data?.data?.documents || []
   } catch (e) {
-    error.value = 'Erreur lors du chargement des documents'
-    console.error(e)
+    console.error('Error loading documents:', e)
+    if (e.response?.status === 401) {
+      error.value = 'Session expirée, veuillez vous reconnecter'
+    } else if (e.response?.status === 403) {
+      error.value = 'Accès non autorisé aux documents'
+    } else if (e.response?.status === 404) {
+      // Entity not found, just show empty
+      documents.value = []
+    } else {
+      error.value = e.response?.data?.message || 'Erreur lors du chargement des documents'
+    }
   } finally {
     loading.value = false
   }
@@ -150,26 +195,28 @@ function isPdf(mimeType) {
 </script>
 
 <template>
-  <div class="card">
-    <div class="card-header flex items-center justify-between">
-      <h2 class="font-semibold text-gray-900">Documents</h2>
-      <button @click="triggerUpload" class="btn-secondary text-sm" :disabled="uploading">
-        <LoadingSpinner v-if="uploading" size="sm" class="mr-2" />
-        <svg v-else class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Ajouter
-      </button>
-      <input
-        ref="fileInput"
-        type="file"
-        class="hidden"
-        :accept="allowedExtensions"
-        @change="handleFileSelect"
-      />
+  <div :class="dark ? 'card-dark overflow-hidden' : 'card'">
+    <div :class="[dark ? 'card-dark-header' : 'card-header', 'flex items-center justify-between']">
+      <h2 :class="['font-semibold', dark ? 'text-white' : 'text-gray-900']">{{ title }}</h2>
+      <template v-if="!readonly">
+        <button @click="triggerUpload" class="btn-secondary text-sm" :disabled="uploading">
+          <LoadingSpinner v-if="uploading" size="sm" class="mr-2" />
+          <svg v-else class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Ajouter
+        </button>
+        <input
+          ref="fileInput"
+          type="file"
+          class="hidden"
+          :accept="allowedExtensions"
+          @change="handleFileSelect"
+        />
+      </template>
     </div>
 
-    <div class="card-body">
+    <div :class="dark ? 'card-dark-body' : 'card-body'">
       <AlertMessage v-if="error" type="error" dismissible @dismiss="error = ''" class="mb-4">
         {{ error }}
       </AlertMessage>
@@ -178,36 +225,36 @@ function isPdf(mimeType) {
         <LoadingSpinner size="lg" />
       </div>
 
-      <div v-else-if="documents.length === 0" class="text-center py-8 text-gray-500">
-        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div v-else-if="documents.length === 0" :class="['text-center py-8', dark ? 'text-gray-400' : 'text-gray-500']">
+        <svg :class="['w-12 h-12 mx-auto mb-3', dark ? 'text-gray-600' : 'text-gray-300']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <p>Aucun document</p>
       </div>
 
-      <div v-else class="divide-y divide-gray-100">
+      <div v-else :class="['divide-y', dark ? 'divide-gray-700/50' : 'divide-gray-100']">
         <div
           v-for="doc in documents"
           :key="doc.id"
-          class="flex items-center py-3 hover:bg-gray-50 -mx-4 px-4 transition-colors"
+          :class="['flex items-center py-3 -mx-4 px-4 transition-colors', dark ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50']"
         >
           <!-- Icon -->
           <div class="w-10 h-10 rounded-lg flex items-center justify-center mr-3"
-               :class="isPdf(doc.mime_type) ? 'bg-red-100' : 'bg-blue-100'">
+               :class="isPdf(doc.mime_type) ? (dark ? 'bg-red-900/50' : 'bg-red-100') : (dark ? 'bg-blue-900/50' : 'bg-blue-100')">
             <!-- PDF Icon -->
-            <svg v-if="isPdf(doc.mime_type)" class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+            <svg v-if="isPdf(doc.mime_type)" :class="['w-5 h-5', dark ? 'text-red-400' : 'text-red-600']" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
             </svg>
             <!-- Image Icon -->
-            <svg v-else class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+            <svg v-else :class="['w-5 h-5', dark ? 'text-blue-400' : 'text-blue-600']" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
             </svg>
           </div>
 
           <!-- Info -->
           <div class="flex-1 min-w-0">
-            <div class="font-medium text-gray-900 truncate">{{ doc.original_name }}</div>
-            <div class="text-sm text-gray-500">
+            <div :class="['font-medium truncate', dark ? 'text-white' : 'text-gray-900']">{{ doc.original_name }}</div>
+            <div :class="['text-sm', dark ? 'text-gray-400' : 'text-gray-500']">
               {{ formatFileSize(doc.size) }} - {{ formatDate(doc.created_at) }}
               <span v-if="doc.uploader_first_name" class="hidden sm:inline">
                 par {{ doc.uploader_first_name }} {{ doc.uploader_last_name }}
@@ -221,7 +268,7 @@ function isPdf(mimeType) {
             <button
               v-if="isImage(doc.mime_type) || isPdf(doc.mime_type)"
               @click="viewDocument(doc)"
-              class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              :class="['p-2 rounded-lg', dark ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100']"
               title="Visualiser"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,7 +280,7 @@ function isPdf(mimeType) {
             <!-- Download -->
             <button
               @click="downloadDocument(doc)"
-              class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              :class="['p-2 rounded-lg', dark ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100']"
               title="Telecharger"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,10 +288,11 @@ function isPdf(mimeType) {
               </svg>
             </button>
 
-            <!-- Delete -->
+            <!-- Delete (admin only) -->
             <button
+              v-if="!readonly"
               @click="confirmDelete(doc)"
-              class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+              :class="['p-2 rounded-lg', dark ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/30' : 'text-gray-400 hover:text-red-600 hover:bg-red-50']"
               title="Supprimer"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -257,6 +305,7 @@ function isPdf(mimeType) {
     </div>
 
     <ConfirmDialog
+      v-if="!readonly"
       ref="confirmDialog"
       title="Supprimer ce document ?"
       :message="`Etes-vous sur de vouloir supprimer '${documentToDelete?.original_name}' ? Cette action est irreversible.`"

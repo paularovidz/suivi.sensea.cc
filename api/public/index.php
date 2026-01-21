@@ -90,6 +90,10 @@ $routes = [
     'POST /auth/refresh' => ['controller' => AuthController::class, 'method' => 'refresh'],
     'POST /auth/logout' => ['controller' => AuthController::class, 'method' => 'logout'],
 
+    // Impersonation routes (admin only)
+    'POST /auth/impersonate/([a-f0-9-]+)' => ['controller' => AuthController::class, 'method' => 'impersonate'],
+    'POST /auth/stop-impersonate' => ['controller' => AuthController::class, 'method' => 'stopImpersonate'],
+
     // Users routes
     'GET /users' => ['controller' => UserController::class, 'method' => 'index'],
     'GET /users/me' => ['controller' => UserController::class, 'method' => 'me'],

@@ -1,4 +1,4 @@
-# Sensea - Suivi Snoezelen
+# sensëa - Suivi Snoezelen
 
 Application de suivi des séances Snoezelen (thérapie sensorielle).
 
@@ -33,7 +33,7 @@ docker compose up -d
 ## Première connexion
 
 1. Ouvrir http://localhost:5173
-2. Entrer l'email : `admin@sensea.cc`
+2. Entrer l'email : `bonjour@sensea.cc`
 3. Cliquer sur "Recevoir le lien de connexion"
 4. Ouvrir MailHog (http://localhost:8025) pour voir l'email
 5. Cliquer sur le lien de connexion
@@ -50,6 +50,36 @@ make db-shell   # Shell MySQL
 make clean      # Tout supprimer (volumes inclus)
 make rebuild    # Rebuild des images
 ```
+
+## Base de données
+
+### Migrations
+
+Exécuter les migrations après chaque démarrage ou mise à jour :
+
+```bash
+make migrate
+# ou
+docker exec snoezelen_api php /var/www/html/migrations/migrate.php
+```
+
+### Factory (données de test)
+
+Générer des données de test réalistes (utilisateurs, personnes, réservations, séances) :
+
+```bash
+# Ajouter des données (conserve les existantes)
+make seed
+
+# Nettoyer et recréer toutes les données
+make seed-clean
+```
+
+La factory crée :
+- 8 utilisateurs (2 associations, 6 particuliers)
+- 15 personnes (bénéficiaires)
+- Réservations des 3 derniers mois avec séances (facturées/payées)
+- Réservations des 35 prochains jours
 
 ## Structure du projet
 
@@ -119,4 +149,4 @@ openssl rand -hex 32  # Pour ENCRYPTION_KEY
 
 ## Licence
 
-Propriétaire - Sensea
+Propriétaire - sensëa

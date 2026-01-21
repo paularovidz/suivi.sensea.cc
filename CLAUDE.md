@@ -470,6 +470,25 @@ docker compose up -d
 docker exec snoezelen_api php /var/www/html/migrations/migrate.php
 ```
 
+### Factory de données de test
+La factory permet de générer des données de test réalistes :
+- 8 utilisateurs (2 associations, 6 particuliers avec cartes fidélité)
+- 15 personnes (bénéficiaires) assignées aux utilisateurs
+- Réservations passées (3 derniers mois) avec séances liées (facturées/payées variables)
+- Réservations futures (35 prochains jours)
+
+```bash
+# Ajouter des données de test (conserve les existantes)
+docker exec snoezelen_api php /var/www/html/database/seed.php
+
+# Nettoyer et recréer toutes les données de test
+docker exec snoezelen_api php /var/www/html/database/seed.php --clean
+```
+
+**Fichiers** :
+- `api/database/Factory.php` - Classe Factory avec toute la logique de génération
+- `api/database/seed.php` - Script d'exécution
+
 ### Autres commandes utiles
 ```bash
 # Logs
@@ -565,7 +584,7 @@ Exemple pour séances classiques (45min + 20min pause) : 9h00, 10h05, 11h10, 13h
 | Clé | Type | Défaut | Description |
 |-----|------|--------|-------------|
 | sms_reminders_enabled | boolean | true | Envoi rappels SMS |
-| sms_sender_name | string | Sensea | Nom expéditeur SMS |
+| sms_sender_name | string | sensëa | Nom expéditeur SMS |
 
 ### Cron jobs
 ```bash

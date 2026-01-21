@@ -90,6 +90,16 @@ import { useBookingStore } from '@/stores/booking'
 const bookingStore = useBookingStore()
 
 function selectType(isNew) {
+  // Reset all following steps if changing client type
+  if (bookingStore.isNewClient !== isNew && bookingStore.isNewClient !== null) {
+    bookingStore.resetFollowingSteps()
+    // Also reset person selection
+    bookingStore.selectedPersonId = null
+    bookingStore.newPerson = { firstName: '', lastName: '' }
+    bookingStore.existingPersons = []
+    bookingStore.existingClientInfo = null
+  }
+
   bookingStore.isNewClient = isNew
   // Set duration type based on selection
   if (isNew) {

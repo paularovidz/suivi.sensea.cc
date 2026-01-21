@@ -154,7 +154,7 @@ function cancel() {
 <template>
   <div class="max-w-2xl mx-auto">
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">
+      <h1 class="text-2xl font-bold text-white">
         {{ isEdit ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}
       </h1>
     </div>
@@ -166,44 +166,44 @@ function cancel() {
         {{ error }}
       </AlertMessage>
 
-      <div class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Informations du compte</h2>
+      <div class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Informations du compte</h2>
         </div>
-        <div class="card-body space-y-6">
+        <div class="p-6 space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label for="first_name" class="label">Prénom *</label>
-              <input id="first_name" v-model="form.first_name" type="text" class="input" required />
+              <label for="first_name" class="block text-sm font-medium text-gray-300 mb-1">Prénom *</label>
+              <input id="first_name" v-model="form.first_name" type="text" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" required />
             </div>
 
             <div>
-              <label for="last_name" class="label">Nom *</label>
-              <input id="last_name" v-model="form.last_name" type="text" class="input" required />
+              <label for="last_name" class="block text-sm font-medium text-gray-300 mb-1">Nom *</label>
+              <input id="last_name" v-model="form.last_name" type="text" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" required />
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label for="email" class="label">Email *</label>
-              <input id="email" v-model="form.email" type="email" class="input" required />
+              <label for="email" class="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+              <input id="email" v-model="form.email" type="email" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" required />
             </div>
 
             <div>
-              <label for="login" class="label">Login *</label>
-              <input id="login" v-model="form.login" type="text" class="input" required />
+              <label for="login" class="block text-sm font-medium text-gray-300 mb-1">Login *</label>
+              <input id="login" v-model="form.login" type="text" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" required />
             </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label for="phone" class="label">Téléphone</label>
-              <input id="phone" v-model="form.phone" type="tel" class="input" />
+              <label for="phone" class="block text-sm font-medium text-gray-300 mb-1">Téléphone</label>
+              <input id="phone" v-model="form.phone" type="tel" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
             </div>
 
             <div>
-              <label for="role" class="label">Rôle *</label>
-              <select id="role" v-model="form.role" class="input">
+              <label for="role" class="block text-sm font-medium text-gray-300 mb-1">Rôle *</label>
+              <select id="role" v-model="form.role" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                 <option value="member">Membre</option>
                 <option value="admin">Administrateur</option>
               </select>
@@ -212,8 +212,8 @@ function cancel() {
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label for="client_type" class="label">Type de client *</label>
-              <select id="client_type" v-model="form.client_type" class="input">
+              <label for="client_type" class="block text-sm font-medium text-gray-300 mb-1">Type de client *</label>
+              <select id="client_type" v-model="form.client_type" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                 <option value="personal">Particulier</option>
                 <option value="association">Association</option>
               </select>
@@ -223,13 +223,13 @@ function cancel() {
           <template v-if="isAssociation">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label for="company_name" class="label">Nom de l'association</label>
-                <input id="company_name" v-model="form.company_name" type="text" class="input" placeholder="Nom de l'association" />
+                <label for="company_name" class="block text-sm font-medium text-gray-300 mb-1">Nom de l'association</label>
+                <input id="company_name" v-model="form.company_name" type="text" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Nom de l'association" />
               </div>
 
               <div>
-                <label for="siret" class="label">N SIRET</label>
-                <input id="siret" v-model="form.siret" type="text" class="input" maxlength="14" placeholder="12345678901234" />
+                <label for="siret" class="block text-sm font-medium text-gray-300 mb-1">N SIRET</label>
+                <input id="siret" v-model="form.siret" type="text" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" maxlength="14" placeholder="12345678901234" />
               </div>
             </div>
           </template>
@@ -239,35 +239,35 @@ function cancel() {
               id="is_active"
               v-model="form.is_active"
               type="checkbox"
-              class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              class="w-4 h-4 text-primary-600 border-gray-600 bg-gray-700 rounded focus:ring-primary-500"
             />
-            <label for="is_active" class="ml-2 text-sm text-gray-700">
+            <label for="is_active" class="ml-2 text-sm text-gray-300">
               Compte actif
             </label>
           </div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Personnes assignées</h2>
-          <p class="text-sm text-gray-500">Sélectionnez les personnes que cet utilisateur pourra suivre</p>
+      <div class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Personnes assignées</h2>
+          <p class="text-sm text-gray-400">Sélectionnez les personnes que cet utilisateur pourra suivre</p>
         </div>
-        <div class="card-body space-y-4">
+        <div class="p-6 space-y-4">
           <!-- Personnes actuellement assignées -->
           <div v-if="assignedPersonsList.length" class="space-y-2">
-            <div class="text-sm font-medium text-gray-700">Personnes assignées ({{ assignedPersonsList.length }})</div>
+            <div class="text-sm font-medium text-gray-300">Personnes assignées ({{ assignedPersonsList.length }})</div>
             <div class="flex flex-wrap gap-2">
               <span
                 v-for="person in assignedPersonsList"
                 :key="person.id"
-                class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-700"
+                class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-900/50 text-primary-300"
               >
                 {{ person.first_name }} {{ person.last_name }}
                 <button
                   type="button"
                   @click="removePerson(person.id)"
-                  class="ml-2 text-primary-500 hover:text-primary-700"
+                  class="ml-2 text-primary-400 hover:text-primary-200"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -279,34 +279,34 @@ function cancel() {
 
           <!-- Recherche et ajout de personnes -->
           <div>
-            <div class="text-sm font-medium text-gray-700 mb-2">Ajouter des personnes</div>
+            <div class="text-sm font-medium text-gray-300 mb-2">Ajouter des personnes</div>
             <input
               v-model="personSearch"
               type="text"
-              class="input mb-2"
+              class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent mb-2"
               placeholder="Rechercher une personne..."
             />
-            <div v-if="allPersons.length" class="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+            <div v-if="allPersons.length" class="border border-gray-600 rounded-lg max-h-48 overflow-y-auto">
               <label
                 v-for="person in filteredPersons"
                 :key="person.id"
-                class="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                class="flex items-center px-3 py-2 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0"
               >
                 <input
                   type="checkbox"
                   :checked="assignedPersons.includes(person.id)"
                   @change="togglePerson(person.id)"
-                  class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  class="w-4 h-4 text-primary-600 border-gray-600 bg-gray-700 rounded focus:ring-primary-500"
                 />
-                <span class="ml-3 text-sm text-gray-700">
+                <span class="ml-3 text-sm text-gray-300">
                   {{ person.first_name }} {{ person.last_name }}
                 </span>
               </label>
-              <div v-if="filteredPersons.length === 0" class="px-3 py-2 text-sm text-gray-500">
+              <div v-if="filteredPersons.length === 0" class="px-3 py-2 text-sm text-gray-400">
                 Aucune personne trouvée
               </div>
             </div>
-            <p v-else class="text-gray-500 text-sm">Aucune personne disponible</p>
+            <p v-else class="text-gray-400 text-sm">Aucune personne disponible</p>
           </div>
         </div>
       </div>

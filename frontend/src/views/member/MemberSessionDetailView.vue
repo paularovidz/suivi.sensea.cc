@@ -118,21 +118,21 @@ async function handleLogout() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-900">
     <!-- Header -->
-    <header class="bg-white border-b border-gray-200 px-4 py-4">
+    <header class="bg-gray-800 border-b border-gray-700 px-4 py-4">
       <div class="max-w-4xl mx-auto flex items-center justify-between">
         <div class="flex items-center">
-          <button @click="goBack" class="mr-4 p-2 rounded-lg hover:bg-gray-100">
-            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button @click="goBack" class="mr-4 p-2 rounded-lg hover:bg-gray-700">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 class="text-xl font-bold text-gradient">Sensea</h1>
+          <h1 class="text-xl font-bold text-gradient">sensëa</h1>
         </div>
         <div class="flex items-center space-x-4">
-          <span class="text-sm text-gray-600">{{ authStore.fullName }}</span>
-          <button @click="handleLogout" class="text-sm text-red-600 hover:text-red-700">
+          <span class="text-sm text-gray-400">{{ authStore.fullName }}</span>
+          <button @click="handleLogout" class="text-sm text-red-400 hover:text-red-300">
             Déconnexion
           </button>
         </div>
@@ -145,97 +145,97 @@ async function handleLogout() {
       <template v-else-if="session">
         <!-- Titre -->
         <div class="mb-6">
-          <h1 class="text-2xl font-bold text-gray-900">
+          <h1 class="text-2xl font-bold text-white">
             Séance du {{ formatDateTime(session.session_date) }}
           </h1>
-          <p class="text-gray-600 mt-1">
+          <p class="text-gray-400 mt-1">
             {{ session.person_first_name }} {{ session.person_last_name }}
           </p>
         </div>
 
         <!-- Info cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div class="card p-4">
-            <div class="text-sm text-gray-500 mb-1">Durée</div>
-            <div class="text-lg font-semibold">{{ session.duration_minutes }} min</div>
+          <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+            <div class="text-sm text-gray-400 mb-1">Durée</div>
+            <div class="text-lg font-semibold text-white">{{ session.duration_minutes }} min</div>
           </div>
-          <div class="card p-4">
-            <div class="text-sm text-gray-500 mb-1">Séances / mois</div>
-            <div class="text-lg font-semibold">{{ session.sessions_per_month || '-' }}</div>
+          <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+            <div class="text-sm text-gray-400 mb-1">Séances / mois</div>
+            <div class="text-lg font-semibold text-white">{{ session.sessions_per_month || '-' }}</div>
           </div>
-          <div class="card p-4">
-            <div class="text-sm text-gray-500 mb-1">Souhaite revenir</div>
+          <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+            <div class="text-sm text-gray-400 mb-1">Souhaite revenir</div>
             <div class="text-lg font-semibold">
-              <span v-if="session.wants_to_return === true" class="text-green-600">Oui</span>
-              <span v-else-if="session.wants_to_return === false" class="text-red-600">Non</span>
-              <span v-else class="text-gray-400">-</span>
+              <span v-if="session.wants_to_return === true" class="text-green-400">Oui</span>
+              <span v-else-if="session.wants_to_return === false" class="text-red-400">Non</span>
+              <span v-else class="text-gray-500">-</span>
             </div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <!-- Début de séance -->
-          <div class="card p-4">
-            <h3 class="font-semibold text-gray-900 mb-3">Début de séance</h3>
+          <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+            <h3 class="font-semibold text-white mb-3">Début de séance</h3>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
-                <span class="text-gray-500">Comportement</span>
-                <span class="font-medium">{{ labels.behavior[session.behavior_start] || '-' }}</span>
+                <span class="text-gray-400">Comportement</span>
+                <span class="font-medium text-white">{{ labels.behavior[session.behavior_start] || '-' }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500">Proposition vient de</span>
-                <span class="font-medium">{{ labels.proposal_origin[session.proposal_origin] || '-' }}</span>
+                <span class="text-gray-400">Proposition vient de</span>
+                <span class="font-medium text-white">{{ labels.proposal_origin[session.proposal_origin] || '-' }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500">Attitude</span>
-                <span class="font-medium">{{ labels.attitude_start[session.attitude_start] || '-' }}</span>
+                <span class="text-gray-400">Attitude</span>
+                <span class="font-medium text-white">{{ labels.attitude_start[session.attitude_start] || '-' }}</span>
               </div>
             </div>
           </div>
 
           <!-- Fin de séance -->
-          <div class="card p-4">
-            <h3 class="font-semibold text-gray-900 mb-3">Fin de séance</h3>
+          <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+            <h3 class="font-semibold text-white mb-3">Fin de séance</h3>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
-                <span class="text-gray-500">Fin</span>
-                <span class="font-medium">{{ labels.session_end[session.session_end] || '-' }}</span>
+                <span class="text-gray-400">Fin</span>
+                <span class="font-medium text-white">{{ labels.session_end[session.session_end] || '-' }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500">Comportement</span>
-                <span class="font-medium">{{ labels.behavior[session.behavior_end] || '-' }}</span>
+                <span class="text-gray-400">Comportement</span>
+                <span class="font-medium text-white">{{ labels.behavior[session.behavior_end] || '-' }}</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Pendant la séance -->
-        <div class="card p-4 mb-6">
-          <h3 class="font-semibold text-gray-900 mb-3">Pendant la séance</h3>
+        <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 mb-6">
+          <h3 class="font-semibold text-white mb-3">Pendant la séance</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
-              <span class="text-gray-500">Position : </span>
-              <span class="font-medium">{{ labels.position[session.position] || '-' }}</span>
+              <span class="text-gray-400">Position : </span>
+              <span class="font-medium text-white">{{ labels.position[session.position] || '-' }}</span>
             </div>
             <div>
-              <span class="text-gray-500">Communication : </span>
-              <span v-if="session.communication?.length" class="font-medium">
+              <span class="text-gray-400">Communication : </span>
+              <span v-if="session.communication?.length" class="font-medium text-white">
                 {{ session.communication.map(c => labels.communication[c]).join(', ') }}
               </span>
-              <span v-else class="text-gray-400">-</span>
+              <span v-else class="text-gray-500">-</span>
             </div>
           </div>
         </div>
 
         <!-- Propositions sensorielles -->
-        <div v-if="session.proposals?.length" class="card mb-6">
-          <div class="p-4 border-b border-gray-100">
-            <h3 class="font-semibold text-gray-900">Propositions sensorielles</h3>
+        <div v-if="session.proposals?.length" class="bg-gray-800 rounded-xl border border-gray-700 mb-6">
+          <div class="p-4 border-b border-gray-700">
+            <h3 class="font-semibold text-white">Propositions sensorielles</h3>
           </div>
-          <div class="divide-y divide-gray-100">
+          <div class="divide-y divide-gray-700">
             <div v-for="proposal in session.proposals" :key="proposal.link_id" class="px-4 py-3 flex items-center justify-between">
               <div>
-                <div class="font-medium text-gray-900">{{ proposal.title }}</div>
+                <div class="font-medium text-white">{{ proposal.title }}</div>
                 <span :class="getTypeBadgeClass(proposal.type)" class="text-xs">
                   {{ labels.sensoryType[proposal.type] }}
                 </span>
@@ -249,18 +249,18 @@ async function handleLogout() {
 
         <!-- Notes (si visibles) -->
         <div v-if="session.professional_notes || session.person_expression" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div v-if="session.professional_notes" class="card p-4">
-            <h3 class="font-semibold text-gray-900 mb-2">Impressions du professionnel</h3>
-            <p class="text-gray-700 text-sm whitespace-pre-wrap">{{ session.professional_notes }}</p>
+          <div v-if="session.professional_notes" class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+            <h3 class="font-semibold text-white mb-2">Impressions du professionnel</h3>
+            <p class="text-gray-300 text-sm whitespace-pre-wrap">{{ session.professional_notes }}</p>
           </div>
-          <div v-if="session.person_expression" class="card p-4">
-            <h3 class="font-semibold text-gray-900 mb-2">Expression de la personne</h3>
-            <p class="text-gray-700 text-sm whitespace-pre-wrap">{{ session.person_expression }}</p>
+          <div v-if="session.person_expression" class="bg-gray-800 rounded-xl border border-gray-700 p-4">
+            <h3 class="font-semibold text-white mb-2">Expression de la personne</h3>
+            <p class="text-gray-300 text-sm whitespace-pre-wrap">{{ session.person_expression }}</p>
           </div>
         </div>
 
         <!-- Créé par -->
-        <div class="mt-6 text-sm text-gray-500 text-center">
+        <div class="mt-6 text-sm text-gray-400 text-center">
           Séance enregistrée par {{ session.creator_first_name }} {{ session.creator_last_name }}
         </div>
       </template>

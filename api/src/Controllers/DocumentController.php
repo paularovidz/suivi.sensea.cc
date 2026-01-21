@@ -12,16 +12,39 @@ use App\Services\AuditService;
 use App\Utils\Response;
 
 /**
- * Contrôleur pour la gestion des documents (admin uniquement)
+ * Contrôleur pour la gestion des documents
+ * - Admin : accès complet (upload, suppression, lecture de tous les documents)
+ * - Utilisateur : lecture de ses propres documents et de ceux des personnes assignées
  */
 class DocumentController
 {
+    /**
+     * Vérifie si l'utilisateur a accès aux documents d'une entité
+     */
+    private function canAccessEntity(string $type, string $id, array $currentUser, bool $isAdmin): bool
+    {
+        if ($isAdmin) {
+            return true;
+        }
+
+        if ($type === 'user') {
+            // L'utilisateur peut voir ses propres documents
+            return $currentUser['id'] === $id;
+        } else {
+            // L'utilisateur peut voir les documents des personnes qui lui sont assignées
+            return Person::isAssignedToUser($id, $currentUser['id']);
+        }
+    }
+
     /**
      * Liste les documents d'une entité
      */
     public function listByEntity(string $type, string $id): void
     {
-        AuthMiddleware::requireAdmin();
+        AuthMiddleware::handle();
+
+        $currentUser = AuthMiddleware::getCurrentUser();
+        $isAdmin = AuthMiddleware::isAdmin();
 
         // Valider le type
         if (!in_array($type, Document::DOCUMENTABLE_TYPES)) {
@@ -37,6 +60,11 @@ class DocumentController
 
         if (!$entity) {
             Response::notFound('Entité non trouvée');
+        }
+
+        // Vérifier l'accès
+        if (!$this->canAccessEntity($type, $id, $currentUser, $isAdmin)) {
+            Response::forbidden('Accès non autorisé');
         }
 
         $documents = Document::findByDocumentable($type, $id);
@@ -156,12 +184,20 @@ class DocumentController
      */
     public function download(string $id): void
     {
-        AuthMiddleware::requireAdmin();
+        AuthMiddleware::handle();
+
+        $currentUser = AuthMiddleware::getCurrentUser();
+        $isAdmin = AuthMiddleware::isAdmin();
 
         $document = Document::findById($id);
 
         if (!$document) {
             Response::notFound('Document non trouvé');
+        }
+
+        // Vérifier l'accès via l'entité parente
+        if (!$this->canAccessEntity($document['documentable_type'], $document['documentable_id'], $currentUser, $isAdmin)) {
+            Response::forbidden('Accès non autorisé');
         }
 
         // Reconstruire le chemin du fichier
@@ -186,12 +222,20 @@ class DocumentController
      */
     public function view(string $id): void
     {
-        AuthMiddleware::requireAdmin();
+        AuthMiddleware::handle();
+
+        $currentUser = AuthMiddleware::getCurrentUser();
+        $isAdmin = AuthMiddleware::isAdmin();
 
         $document = Document::findById($id);
 
         if (!$document) {
             Response::notFound('Document non trouvé');
+        }
+
+        // Vérifier l'accès via l'entité parente
+        if (!$this->canAccessEntity($document['documentable_type'], $document['documentable_id'], $currentUser, $isAdmin)) {
+            Response::forbidden('Accès non autorisé');
         }
 
         $filepath = Document::getFilePath($document);

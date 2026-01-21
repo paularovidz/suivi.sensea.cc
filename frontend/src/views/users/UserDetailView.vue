@@ -15,6 +15,8 @@ const authStore = useAuthStore()
 const loading = ref(true)
 const user = ref(null)
 const confirmDialog = ref(null)
+const impersonateDialog = ref(null)
+const impersonating = ref(false)
 
 onMounted(async () => {
   try {
@@ -39,6 +41,26 @@ async function handleDelete() {
     console.error('Error deleting user:', e)
   }
 }
+
+function confirmImpersonate() {
+  impersonateDialog.value?.open()
+}
+
+async function handleImpersonate() {
+  impersonating.value = true
+  try {
+    await authStore.impersonate(route.params.id)
+  } catch (e) {
+    console.error('Error impersonating user:', e)
+  } finally {
+    impersonating.value = false
+  }
+}
+
+const canImpersonate = computed(() => {
+  // Can impersonate if: user is loaded, not impersonating self, and current user is admin
+  return user.value && authStore.user?.id !== user.value.id && authStore.isAdmin && !authStore.isImpersonating
+})
 
 function formatDate(dateString) {
   if (!dateString) return '-'
@@ -72,19 +94,31 @@ const isPersonalClient = computed(() => {
       <!-- Header -->
       <div class="flex items-start justify-between">
         <div class="flex items-center">
-          <RouterLink to="/app/users" class="mr-4 p-2 rounded-lg hover:bg-gray-100">
-            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <RouterLink to="/app/users" class="mr-4 p-2 rounded-lg hover:bg-gray-700">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
           </RouterLink>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900">
+            <h1 class="text-2xl font-bold text-white">
               {{ user.first_name }} {{ user.last_name }}
             </h1>
-            <p class="text-gray-600">{{ user.email }}</p>
+            <p class="text-gray-400">{{ user.email }}</p>
           </div>
         </div>
         <div class="flex space-x-3">
+          <button
+            v-if="canImpersonate"
+            @click="confirmImpersonate"
+            :disabled="impersonating"
+            class="btn-secondary"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Se connecter en tant que
+          </button>
           <RouterLink :to="`/app/users/${user.id}/edit`" class="btn-secondary">
             Modifier
           </RouterLink>
@@ -96,22 +130,22 @@ const isPersonalClient = computed(() => {
 
       <!-- Info cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="card p-6">
-          <div class="text-sm text-gray-500 mb-1">Role</div>
+        <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <div class="text-sm text-gray-400 mb-1">Role</div>
           <div class="text-lg font-semibold">
-            <span :class="user.role === 'admin' ? 'text-primary-600' : 'text-gray-900'">
+            <span :class="user.role === 'admin' ? 'text-primary-400' : 'text-white'">
               {{ roleLabels[user.role] || user.role }}
             </span>
           </div>
         </div>
-        <div class="card p-6">
-          <div class="text-sm text-gray-500 mb-1">Type de client</div>
-          <div class="text-lg font-semibold">{{ clientTypeLabels[user.client_type] || user.client_type }}</div>
+        <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <div class="text-sm text-gray-400 mb-1">Type de client</div>
+          <div class="text-lg font-semibold text-white">{{ clientTypeLabels[user.client_type] || user.client_type }}</div>
         </div>
-        <div class="card p-6">
-          <div class="text-sm text-gray-500 mb-1">Statut</div>
+        <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <div class="text-sm text-gray-400 mb-1">Statut</div>
           <div class="text-lg font-semibold">
-            <span :class="user.is_active ? 'text-green-600' : 'text-red-600'">
+            <span :class="user.is_active ? 'text-green-400' : 'text-red-400'">
               {{ user.is_active ? 'Actif' : 'Inactif' }}
             </span>
           </div>
@@ -119,41 +153,41 @@ const isPersonalClient = computed(() => {
       </div>
 
       <!-- User details -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Informations</h2>
+      <div class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Informations</h2>
         </div>
-        <div class="card-body">
+        <div class="p-6">
           <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <dt class="text-sm text-gray-500">Login</dt>
-              <dd class="text-gray-900">{{ user.login }}</dd>
+              <dt class="text-sm text-gray-400">Login</dt>
+              <dd class="text-white">{{ user.login }}</dd>
             </div>
             <div>
-              <dt class="text-sm text-gray-500">Telephone</dt>
-              <dd class="text-gray-900">{{ user.phone || '-' }}</dd>
+              <dt class="text-sm text-gray-400">Telephone</dt>
+              <dd class="text-white">{{ user.phone || '-' }}</dd>
             </div>
             <div>
-              <dt class="text-sm text-gray-500">Date de creation</dt>
-              <dd class="text-gray-900">{{ formatDate(user.created_at) }}</dd>
+              <dt class="text-sm text-gray-400">Date de creation</dt>
+              <dd class="text-white">{{ formatDate(user.created_at) }}</dd>
             </div>
             <div>
-              <dt class="text-sm text-gray-500">Derniere connexion</dt>
-              <dd class="text-gray-900">{{ formatDate(user.last_login_at) }}</dd>
+              <dt class="text-sm text-gray-400">Derniere connexion</dt>
+              <dd class="text-white">{{ formatDate(user.last_login_at) }}</dd>
             </div>
           </dl>
 
           <!-- Association details -->
           <template v-if="user.client_type === 'association'">
-            <hr class="my-4" />
+            <hr class="my-4 border-gray-700" />
             <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <dt class="text-sm text-gray-500">Nom de l'association</dt>
-                <dd class="text-gray-900">{{ user.company_name || '-' }}</dd>
+                <dt class="text-sm text-gray-400">Nom de l'association</dt>
+                <dd class="text-white">{{ user.company_name || '-' }}</dd>
               </div>
               <div>
-                <dt class="text-sm text-gray-500">N SIRET</dt>
-                <dd class="text-gray-900">{{ user.siret || '-' }}</dd>
+                <dt class="text-sm text-gray-400">N SIRET</dt>
+                <dd class="text-white">{{ user.siret || '-' }}</dd>
               </div>
             </dl>
           </template>
@@ -161,22 +195,22 @@ const isPersonalClient = computed(() => {
       </div>
 
       <!-- Assigned persons -->
-      <div v-if="user.persons && user.persons.length > 0" class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Personnes assignees ({{ user.persons.length }})</h2>
+      <div v-if="user.persons && user.persons.length > 0" class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Personnes assignees ({{ user.persons.length }})</h2>
         </div>
-        <div class="divide-y divide-gray-100">
+        <div class="divide-y divide-gray-700">
           <RouterLink
             v-for="person in user.persons"
             :key="person.id"
             :to="`/app/persons/${person.id}`"
-            class="flex items-center px-6 py-4 hover:bg-gray-50 transition-colors"
+            class="flex items-center px-6 py-4 hover:bg-gray-700 transition-colors"
           >
-            <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-semibold">
+            <div class="w-10 h-10 rounded-full bg-primary-900/50 flex items-center justify-center text-primary-400 font-semibold">
               {{ person.first_name.charAt(0) }}{{ person.last_name.charAt(0) }}
             </div>
             <div class="ml-4 flex-1">
-              <div class="font-medium text-gray-900">
+              <div class="font-medium text-white">
                 {{ person.first_name }} {{ person.last_name }}
               </div>
             </div>
@@ -207,6 +241,14 @@ const isPersonalClient = computed(() => {
       confirm-text="Supprimer"
       danger
       @confirm="handleDelete"
+    />
+
+    <ConfirmDialog
+      ref="impersonateDialog"
+      title="Se connecter en tant que cet utilisateur ?"
+      :message="`Vous allez vous connecter en tant que ${user?.first_name} ${user?.last_name}. Vous pourrez revenir a votre compte admin a tout moment via la banniere en haut de page.`"
+      confirm-text="Se connecter"
+      @confirm="handleImpersonate"
     />
   </div>
 </template>

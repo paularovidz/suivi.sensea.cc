@@ -204,6 +204,19 @@ class Booking
             $params['duration_type'] = $filters['duration_type'];
         }
 
+        if (!empty($filters['person_id'])) {
+            $where[] = 'b.person_id = :person_id';
+            $params['person_id'] = $filters['person_id'];
+        }
+
+        if (!empty($filters['no_session'])) {
+            $where[] = 'b.session_id IS NULL';
+        }
+
+        if (!empty($filters['upcoming'])) {
+            $where[] = 'b.session_date >= NOW()';
+        }
+
         $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
         $stmt = $db->prepare("
@@ -254,6 +267,19 @@ class Booking
         if (!empty($filters['date_to'])) {
             $where[] = 'session_date <= :date_to';
             $params['date_to'] = $filters['date_to'];
+        }
+
+        if (!empty($filters['person_id'])) {
+            $where[] = 'person_id = :person_id';
+            $params['person_id'] = $filters['person_id'];
+        }
+
+        if (!empty($filters['no_session'])) {
+            $where[] = 'session_id IS NULL';
+        }
+
+        if (!empty($filters['upcoming'])) {
+            $where[] = 'session_date >= NOW()';
         }
 
         $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';

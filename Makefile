@@ -1,8 +1,8 @@
-.PHONY: help install start stop restart logs shell-api shell-frontend db-shell clean rebuild
+.PHONY: help install start stop restart logs shell-api shell-frontend db-shell clean rebuild migrate migrate-fresh seed seed-clean cron cron-sessions cron-reminders cron-calendar cron-cleanup
 
 # Default target
 help:
-	@echo "Sensea Snoezelen - Commandes disponibles:"
+	@echo "sensëa Snoezelen - Commandes disponibles:"
 	@echo ""
 	@echo "  make install    - Installation initiale (copie .env, build, start)"
 	@echo "  make start      - Démarrer tous les conteneurs"
@@ -15,6 +15,17 @@ help:
 	@echo "  make shell-api      - Shell dans le conteneur API"
 	@echo "  make shell-frontend - Shell dans le conteneur frontend"
 	@echo "  make db-shell       - Shell MySQL"
+	@echo ""
+	@echo "  make migrate       - Exécuter les migrations"
+	@echo "  make migrate-fresh - Réinitialiser la BDD et relancer toutes les migrations"
+	@echo "  make seed          - Ajouter des données de test"
+	@echo "  make seed-clean    - Nettoyer et recréer les données de test"
+	@echo ""
+	@echo "  make cron          - Lancer toutes les tâches cron"
+	@echo "  make cron-sessions - Créer les sessions depuis les réservations du jour"
+	@echo "  make cron-reminders- Envoyer les rappels pour demain"
+	@echo "  make cron-calendar - Rafraîchir le cache calendrier Google"
+	@echo "  make cron-cleanup  - Nettoyer les réservations expirées"
 	@echo ""
 	@echo "  make clean      - Supprimer les conteneurs et volumes"
 	@echo "  make rebuild    - Rebuild complet des images"
@@ -42,7 +53,7 @@ install:
 	@echo "  - MailHog:    http://localhost:8025 (pour voir les emails)"
 	@echo "  - phpMyAdmin: http://localhost:8081"
 	@echo ""
-	@echo "Compte admin par défaut: admin@sensea.cc"
+	@echo "Compte admin par défaut: bonjour@sensea.cc"
 	@echo "Demandez un magic link sur la page de login pour vous connecter."
 
 # Démarrer
@@ -91,3 +102,36 @@ rebuild:
 	@docker compose build --no-cache
 	@docker compose up -d
 	@echo "✓ Rebuild terminé"
+
+# Base de données
+migrate:
+	@docker exec snoezelen_api php /var/www/html/migrations/migrate.php
+
+migrate-fresh:
+	@echo "⚠️  Réinitialisation de la base de données..."
+	@docker exec snoezelen_api php /var/www/html/migrations/migrate.php --fresh
+	@echo "✓ Base de données réinitialisée"
+
+seed:
+	@docker exec snoezelen_api php /var/www/html/database/seed.php
+	@echo "✓ Données de test ajoutées"
+
+seed-clean:
+	@docker exec snoezelen_api php /var/www/html/database/seed.php --clean
+	@echo "✓ Données de test recréées"
+
+# Tâches cron
+cron:
+	@docker exec snoezelen_api php /var/www/html/cron/booking-tasks.php all
+
+cron-sessions:
+	@docker exec snoezelen_api php /var/www/html/cron/booking-tasks.php create-sessions
+
+cron-reminders:
+	@docker exec snoezelen_api php /var/www/html/cron/booking-tasks.php send-reminders
+
+cron-calendar:
+	@docker exec snoezelen_api php /var/www/html/cron/booking-tasks.php refresh-calendar
+
+cron-cleanup:
+	@docker exec snoezelen_api php /var/www/html/cron/booking-tasks.php cleanup-expired

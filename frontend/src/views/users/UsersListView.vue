@@ -62,10 +62,6 @@ function goToUser(userId) {
   <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Utilisateurs</h1>
-        <p class="text-gray-600 mt-1">Gestion des comptes professionnels</p>
-      </div>
       <RouterLink to="/app/users/new" class="btn-primary">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -77,15 +73,15 @@ function goToUser(userId) {
     <LoadingSpinner v-if="loading" size="lg" class="py-12" />
 
     <template v-else>
-      <div class="card overflow-hidden">
-        <table class="table">
+      <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <table class="w-full text-sm text-left">
           <thead>
-            <tr>
-              <th>Utilisateur</th>
-              <th>Email</th>
-              <th>Rôle</th>
-              <th>Statut</th>
-              <th class="text-right">Actions</th>
+            <tr class="bg-gray-800/50">
+              <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Utilisateur</th>
+              <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Email</th>
+              <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Rôle</th>
+              <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Statut</th>
+              <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -93,31 +89,31 @@ function goToUser(userId) {
               v-for="user in users"
               :key="user.id"
               @click="goToUser(user.id)"
-              class="cursor-pointer hover:bg-gray-50"
+              class="cursor-pointer border-t border-gray-700 hover:bg-gray-700/50"
             >
-              <td>
+              <td class="px-4 py-3">
                 <div class="flex items-center">
                   <div class="w-8 h-8 rounded-full gradient-sensea flex items-center justify-center text-white font-medium text-sm mr-3">
                     {{ user.first_name[0] }}{{ user.last_name[0] }}
                   </div>
                   <div>
-                    <div class="font-medium text-gray-900">{{ user.first_name }} {{ user.last_name }}</div>
-                    <div class="text-sm text-gray-500">@{{ user.login }}</div>
+                    <div class="font-medium text-gray-100">{{ user.first_name }} {{ user.last_name }}</div>
+                    <div class="text-sm text-gray-400">@{{ user.login }}</div>
                   </div>
                 </div>
               </td>
-              <td>{{ user.email }}</td>
-              <td>
+              <td class="px-4 py-3 text-gray-300">{{ user.email }}</td>
+              <td class="px-4 py-3">
                 <span :class="getRoleBadgeClass(user.role)">
                   {{ user.role === 'admin' ? 'Admin' : 'Membre' }}
                 </span>
               </td>
-              <td>
+              <td class="px-4 py-3">
                 <span :class="user.is_active ? 'badge-success' : 'badge-danger'">
                   {{ user.is_active ? 'Actif' : 'Inactif' }}
                 </span>
               </td>
-              <td class="text-right" @click.stop>
+              <td class="px-4 py-3 text-right" @click.stop>
                 <button @click="confirmDelete(user)" class="btn-danger btn-sm">
                   Désactiver
                 </button>
@@ -127,8 +123,8 @@ function goToUser(userId) {
         </table>
 
         <!-- Pagination -->
-        <div v-if="pagination.pages > 1" class="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-          <div class="text-sm text-gray-500">
+        <div v-if="pagination.pages > 1" class="px-4 py-3 border-t border-gray-700 flex items-center justify-between">
+          <div class="text-sm text-gray-400">
             {{ pagination.total }} utilisateur(s)
           </div>
           <div class="flex space-x-2">
@@ -140,7 +136,7 @@ function goToUser(userId) {
                 'px-3 py-1 text-sm rounded',
                 page === pagination.page
                   ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               ]"
             >
               {{ page }}

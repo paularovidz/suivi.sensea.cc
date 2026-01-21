@@ -95,10 +95,6 @@ function getBehaviorBadgeClass(behavior) {
   <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Séances</h1>
-        <p class="text-gray-600 mt-1">Historique des séances Snoezelen</p>
-      </div>
       <RouterLink to="/app/sessions/new" class="btn-primary">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -109,44 +105,44 @@ function getBehaviorBadgeClass(behavior) {
 
     <!-- Admin KPIs -->
     <div v-if="isAdmin && stats" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="card p-4">
+      <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
         <div class="flex items-center">
-          <div class="p-3 rounded-full bg-primary-100 mr-4">
-            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="p-3 rounded-full bg-primary-900/50 mr-4">
+            <svg class="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
           <div>
-            <p class="text-sm text-gray-500">Séances ce mois</p>
-            <p class="text-2xl font-bold text-gray-900">{{ stats.sessions_this_month }}</p>
+            <p class="text-sm text-gray-400">Séances ce mois</p>
+            <p class="text-2xl font-bold text-white">{{ stats.sessions_this_month }}</p>
           </div>
         </div>
       </div>
 
-      <div class="card p-4">
+      <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
         <div class="flex items-center">
-          <div class="p-3 rounded-full bg-green-100 mr-4">
-            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="p-3 rounded-full bg-green-900/50 mr-4">
+            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
-            <p class="text-sm text-gray-500">Séances aujourd'hui</p>
-            <p class="text-2xl font-bold text-gray-900">{{ stats.sessions_today }}</p>
+            <p class="text-sm text-gray-400">Séances aujourd'hui</p>
+            <p class="text-2xl font-bold text-white">{{ stats.sessions_today }}</p>
           </div>
         </div>
       </div>
 
-      <div class="card p-4">
+      <div class="bg-gray-800 rounded-xl border border-gray-700 p-4">
         <div class="flex items-center">
-          <div class="p-3 rounded-full bg-purple-100 mr-4">
-            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="p-3 rounded-full bg-purple-900/50 mr-4">
+            <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
           <div>
-            <p class="text-sm text-gray-500">Total séances</p>
-            <p class="text-2xl font-bold text-gray-900">{{ stats.total_sessions }}</p>
+            <p class="text-sm text-gray-400">Total séances</p>
+            <p class="text-2xl font-bold text-white">{{ stats.total_sessions }}</p>
           </div>
         </div>
       </div>
@@ -169,34 +165,34 @@ function getBehaviorBadgeClass(behavior) {
             </RouterLink>
           </EmptyState>
 
-          <div v-else class="card overflow-hidden">
-            <table class="table">
+          <div v-else class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+            <table class="w-full text-sm text-left">
               <thead>
-                <tr>
-                  <th>Personne</th>
-                  <th>Date</th>
-                  <th>Durée</th>
-                  <th>Comportement (fin)</th>
-                  <th class="text-right">Actions</th>
+                <tr class="bg-gray-800/50">
+                  <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Personne</th>
+                  <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Date</th>
+                  <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Durée</th>
+                  <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs">Comportement (fin)</th>
+                  <th class="px-4 py-3 font-medium text-gray-400 uppercase tracking-wider text-xs text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="session in sessionsStore.sessions" :key="session.id">
-                  <td>
-                    <RouterLink :to="`/app/persons/${session.person_id}`" class="font-medium hover:text-primary-600">
+                <tr v-for="session in sessionsStore.sessions" :key="session.id" class="border-t border-gray-700 hover:bg-gray-700/50">
+                  <td class="px-4 py-3 text-gray-100">
+                    <RouterLink :to="`/app/persons/${session.person_id}`" class="font-medium hover:text-primary-400">
                       {{ session.person_first_name }} {{ session.person_last_name }}
                     </RouterLink>
                   </td>
-                  <td>{{ formatDate(session.session_date) }}</td>
-                  <td>{{ session.duration_minutes }} min</td>
-                  <td>
+                  <td class="px-4 py-3 text-gray-300">{{ formatDate(session.session_date) }}</td>
+                  <td class="px-4 py-3 text-gray-300">{{ session.duration_minutes }} min</td>
+                  <td class="px-4 py-3">
                     <span v-if="session.behavior_end" :class="getBehaviorBadgeClass(session.behavior_end)">
                       {{ behaviorLabels[session.behavior_end] }}
                     </span>
-                    <span v-else class="text-gray-400">-</span>
+                    <span v-else class="text-gray-500">-</span>
                   </td>
-                  <td class="text-right">
-                    <RouterLink :to="`/app/sessions/${session.id}`" class="btn-secondary btn-sm">
+                  <td class="px-4 py-3 text-right">
+                    <RouterLink :to="`/app/sessions/${session.id}`" class="bg-gray-700 text-gray-200 border border-gray-600 hover:bg-gray-600 px-3 py-1.5 text-xs rounded-lg transition-colors">
                       Voir
                     </RouterLink>
                   </td>
@@ -205,8 +201,8 @@ function getBehaviorBadgeClass(behavior) {
             </table>
 
             <!-- Pagination -->
-            <div v-if="sessionsStore.pagination.pages > 1" class="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-              <div class="text-sm text-gray-500">
+            <div v-if="sessionsStore.pagination.pages > 1" class="px-4 py-3 border-t border-gray-700 flex items-center justify-between">
+              <div class="text-sm text-gray-400">
                 {{ sessionsStore.pagination.total }} séance(s)
               </div>
               <div class="flex space-x-2">
@@ -218,7 +214,7 @@ function getBehaviorBadgeClass(behavior) {
                     'px-3 py-1 text-sm rounded',
                     page === sessionsStore.pagination.page
                       ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   ]"
                 >
                   {{ page }}

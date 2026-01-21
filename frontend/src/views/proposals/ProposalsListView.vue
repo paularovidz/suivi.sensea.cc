@@ -19,8 +19,7 @@ const error = ref('')
 const form = ref({
   title: '',
   type: 'tactile',
-  description: '',
-  is_global: false
+  description: ''
 })
 
 const selectedType = ref('')
@@ -47,15 +46,13 @@ function openModal(proposal = null) {
     form.value = {
       title: proposal.title,
       type: proposal.type,
-      description: proposal.description || '',
-      is_global: proposal.is_global
+      description: proposal.description || ''
     }
   } else {
     form.value = {
       title: '',
       type: 'tactile',
-      description: '',
-      is_global: false
+      description: ''
     }
   }
   showModal.value = true
@@ -106,10 +103,6 @@ function canEdit(proposal) {
   <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">Propositions sensorielles</h1>
-        <p class="text-gray-600 mt-1">Activités utilisées pendant les séances Snoezelen</p>
-      </div>
       <button @click="openModal()" class="btn-primary">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -124,7 +117,7 @@ function canEdit(proposal) {
         @click="selectedType = ''"
         :class="[
           'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-          !selectedType ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          !selectedType ? 'bg-primary-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
         ]"
       >
         Toutes
@@ -135,7 +128,7 @@ function canEdit(proposal) {
         @click="selectedType = type"
         :class="[
           'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-          selectedType === type ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          selectedType === type ? 'bg-primary-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
         ]"
       >
         {{ label }}
@@ -149,38 +142,37 @@ function canEdit(proposal) {
         <div
           v-for="proposal in filteredProposals"
           :key="proposal.id"
-          class="card p-4 hover:shadow-md transition-shadow"
+          class="bg-gray-800 rounded-xl border border-gray-700 p-4 hover:border-gray-600 transition-colors"
         >
           <div class="flex items-start justify-between">
             <div class="flex-1">
-              <h3 class="font-medium text-gray-900">{{ proposal.title }}</h3>
-              <p v-if="proposal.description" class="text-sm text-gray-500 mt-1 line-clamp-2">
+              <h3 class="font-medium text-white">{{ proposal.title }}</h3>
+              <p v-if="proposal.description" class="text-sm text-gray-400 mt-1 line-clamp-2">
                 {{ proposal.description }}
               </p>
             </div>
             <div v-if="canEdit(proposal)" class="flex space-x-1 ml-2">
-              <button @click="openModal(proposal)" class="p-1 text-gray-400 hover:text-gray-600">
+              <button @click="openModal(proposal)" class="p-1 text-gray-400 hover:text-gray-200">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
               </button>
-              <button @click="confirmDelete(proposal)" class="p-1 text-gray-400 hover:text-red-600">
+              <button @click="confirmDelete(proposal)" class="p-1 text-gray-400 hover:text-red-400">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </button>
             </div>
           </div>
-          <div class="mt-3 flex items-center justify-between">
+          <div class="mt-3">
             <span :class="proposalsStore.getTypeBadgeClass(proposal.type)">
               {{ proposalsStore.getTypeLabel(proposal.type) }}
             </span>
-            <span v-if="proposal.is_global" class="text-xs text-gray-400">Globale</span>
           </div>
         </div>
       </div>
 
-      <div v-if="filteredProposals.length === 0" class="text-center py-12 text-gray-500">
+      <div v-if="filteredProposals.length === 0" class="text-center py-12 text-gray-400">
         Aucune proposition trouvée
       </div>
     </template>
@@ -190,8 +182,8 @@ function canEdit(proposal) {
       <div v-if="showModal" class="fixed inset-0 z-50 overflow-y-auto">
         <div class="fixed inset-0 bg-black/50" @click="closeModal" />
         <div class="flex min-h-full items-center justify-center p-4">
-          <form @submit.prevent="handleSubmit" class="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          <form @submit.prevent="handleSubmit" class="relative bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 border border-gray-700">
+            <h3 class="text-lg font-semibold text-white mb-4">
               {{ editingProposal ? 'Modifier la proposition' : 'Nouvelle proposition' }}
             </h3>
 
@@ -199,13 +191,13 @@ function canEdit(proposal) {
 
             <div class="space-y-4">
               <div>
-                <label class="label">Titre *</label>
-                <input v-model="form.title" type="text" class="input" required />
+                <label class="block text-sm font-medium text-gray-300 mb-1">Titre *</label>
+                <input v-model="form.title" type="text" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" required />
               </div>
 
               <div>
-                <label class="label">Type *</label>
-                <select v-model="form.type" class="input">
+                <label class="block text-sm font-medium text-gray-300 mb-1">Type *</label>
+                <select v-model="form.type" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                   <option v-for="(label, type) in proposalsStore.typeLabels" :key="type" :value="type">
                     {{ label }}
                   </option>
@@ -213,25 +205,13 @@ function canEdit(proposal) {
               </div>
 
               <div>
-                <label class="label">Description</label>
-                <textarea v-model="form.description" rows="3" class="input"></textarea>
-              </div>
-
-              <div v-if="authStore.isAdmin" class="flex items-center">
-                <input
-                  id="is_global"
-                  v-model="form.is_global"
-                  type="checkbox"
-                  class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                />
-                <label for="is_global" class="ml-2 text-sm text-gray-700">
-                  Proposition globale (visible par tous)
-                </label>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+                <textarea v-model="form.description" rows="3" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"></textarea>
               </div>
             </div>
 
             <div class="flex justify-end space-x-3 mt-6">
-              <button type="button" @click="closeModal" class="btn-secondary">Annuler</button>
+              <button type="button" @click="closeModal" class="bg-gray-700 text-gray-200 border border-gray-600 hover:bg-gray-600 px-4 py-2 text-sm font-medium rounded-lg transition-colors">Annuler</button>
               <button type="submit" class="btn-primary">
                 {{ editingProposal ? 'Enregistrer' : 'Créer' }}
               </button>

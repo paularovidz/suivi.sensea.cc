@@ -304,7 +304,7 @@ function cancel() {
 <template>
   <div class="max-w-4xl mx-auto">
     <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-900">
+      <h1 class="text-2xl font-bold text-white">
         {{ isEdit ? 'Modifier la séance' : 'Nouvelle séance' }}
       </h1>
     </div>
@@ -321,11 +321,11 @@ function cancel() {
       </AlertMessage>
 
       <!-- Informations générales -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Informations générales</h2>
+      <div class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Informations générales</h2>
         </div>
-        <div class="card-body grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label for="person_id" class="label">Personne *</label>
             <div v-if="!isEdit" class="relative">
@@ -339,30 +339,30 @@ function cancel() {
               />
               <div
                 v-if="showPersonDropdown && filteredPersons.length > 0"
-                class="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+                class="absolute z-20 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto"
               >
                 <button
                   v-for="person in filteredPersons"
                   :key="person.id"
                   type="button"
                   @mousedown.prevent="selectPerson(person)"
-                  class="w-full px-4 py-2 text-left hover:bg-gray-50"
-                  :class="{ 'bg-primary-50': form.person_id === person.id }"
+                  class="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-600"
+                  :class="{ 'bg-primary-900/50': form.person_id === person.id }"
                 >
                   {{ person.first_name }} {{ person.last_name }}
                 </button>
               </div>
               <input type="hidden" :value="form.person_id" required />
-              <div v-if="selectedPersonName && form.person_id" class="mt-2 px-3 py-2 bg-primary-50 text-primary-700 rounded-lg flex items-center justify-between">
+              <div v-if="selectedPersonName && form.person_id" class="mt-2 px-3 py-2 bg-primary-900/50 text-primary-300 rounded-lg flex items-center justify-between">
                 <span>{{ selectedPersonName }}</span>
-                <button type="button" @click="clearPerson" class="text-primary-500 hover:text-primary-700">
+                <button type="button" @click="clearPerson" class="text-primary-400 hover:text-primary-200">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
             </div>
-            <div v-else class="px-3 py-2 bg-gray-100 rounded-lg">
+            <div v-else class="px-3 py-2 bg-gray-700 rounded-lg text-gray-300">
               {{ selectedPersonName || 'Personne non trouvée' }}
             </div>
           </div>
@@ -380,11 +380,11 @@ function cancel() {
       </div>
 
       <!-- Début de séance -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Début de séance</h2>
+      <div class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Début de séance</h2>
         </div>
-        <div class="card-body grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label class="label">Comportement</label>
             <select v-model="form.behavior_start" class="input">
@@ -412,11 +412,11 @@ function cancel() {
       </div>
 
       <!-- Pendant la séance -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Pendant la séance</h2>
+      <div class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Pendant la séance</h2>
         </div>
-        <div class="card-body space-y-6">
+        <div class="p-6 space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="label">Position</label>
@@ -438,7 +438,7 @@ function cancel() {
                     'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
                     form.communication.includes(opt.value)
                       ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   ]"
                 >
                   {{ opt.label }}
@@ -461,14 +461,14 @@ function cancel() {
               />
               <div
                 v-if="showProposalDropdown && filteredProposals.length > 0"
-                class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+                class="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto"
               >
                 <button
                   v-for="proposal in filteredProposals"
                   :key="proposal.id"
                   type="button"
                   @mousedown.prevent="addProposal(proposal)"
-                  class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
+                  class="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-600 flex items-center justify-between"
                 >
                   <span>{{ proposal.title }}</span>
                   <span :class="proposalsStore.getTypeBadgeClass(proposal.type)">
@@ -478,14 +478,14 @@ function cancel() {
               </div>
               <div
                 v-if="showProposalDropdown && filteredProposals.length === 0 && proposalSearch"
-                class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg"
+                class="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg"
               >
-                <div class="px-4 py-3 text-gray-500 text-sm">
+                <div class="px-4 py-3 text-gray-400 text-sm">
                   Aucune proposition trouvée pour "{{ proposalSearch }}"
                 </div>
               </div>
             </div>
-            <button type="button" @click="showProposalModal = true" class="mt-2 text-sm text-primary-600 hover:text-primary-700">
+            <button type="button" @click="showProposalModal = true" class="mt-2 text-sm text-primary-400 hover:text-primary-300">
               + Créer une nouvelle proposition
             </button>
 
@@ -493,10 +493,10 @@ function cancel() {
               <div
                 v-for="(proposal, index) in form.proposals"
                 :key="index"
-                class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg"
+                class="flex items-center gap-4 p-3 bg-gray-700/50 rounded-lg"
               >
                 <div class="flex-1">
-                  <div class="font-medium">{{ proposal.title }}</div>
+                  <div class="font-medium text-gray-200">{{ proposal.title }}</div>
                   <span :class="proposalsStore.getTypeBadgeClass(proposal.type)">
                     {{ proposalsStore.getTypeLabel(proposal.type) }}
                   </span>
@@ -517,11 +517,11 @@ function cancel() {
       </div>
 
       <!-- Fin de séance -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Fin de séance</h2>
+      <div class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Fin de séance</h2>
         </div>
-        <div class="card-body grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label class="label">Fin de séance</label>
             <select v-model="form.session_end" class="input">
@@ -550,49 +550,49 @@ function cancel() {
       </div>
 
       <!-- Facturation -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Facturation</h2>
+      <div class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Facturation</h2>
         </div>
-        <div class="card-body">
+        <div class="p-6">
           <div class="flex flex-wrap gap-6">
             <label class="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 v-model="form.is_invoiced"
-                class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                class="w-4 h-4 text-primary-600 border-gray-600 bg-gray-700 rounded focus:ring-primary-500"
               />
-              <span class="ml-2 text-sm text-gray-700">Facturee</span>
+              <span class="ml-2 text-sm text-gray-300">Facturée</span>
             </label>
 
             <label class="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 v-model="form.is_paid"
-                class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                class="w-4 h-4 text-primary-600 border-gray-600 bg-gray-700 rounded focus:ring-primary-500"
               />
-              <span class="ml-2 text-sm text-gray-700">Payee</span>
+              <span class="ml-2 text-sm text-gray-300">Payée</span>
             </label>
 
             <label class="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 v-model="form.is_free_session"
-                class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                class="w-4 h-4 text-green-600 border-gray-600 bg-gray-700 rounded focus:ring-green-500"
               />
-              <span class="ml-2 text-sm text-gray-700">Seance gratuite (fidelite)</span>
+              <span class="ml-2 text-sm text-gray-300">Séance gratuite (fidélité)</span>
             </label>
           </div>
         </div>
       </div>
 
       <!-- Notes privées -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="font-semibold text-gray-900">Notes privées</h2>
-          <p class="text-sm text-gray-500">Ces notes sont chiffrées et confidentielles.</p>
+      <div class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Notes privées</h2>
+          <p class="text-sm text-gray-400">Ces notes sont chiffrées et confidentielles.</p>
         </div>
-        <div class="card-body space-y-6">
+        <div class="p-6 space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="label">Impressions du professionnel</label>
@@ -625,10 +625,10 @@ function cancel() {
     <!-- Modal création proposition -->
     <Teleport to="body">
       <div v-if="showProposalModal" class="fixed inset-0 z-50 overflow-y-auto">
-        <div class="fixed inset-0 bg-black/50" @click="showProposalModal = false" />
+        <div class="fixed inset-0 bg-black/70" @click="showProposalModal = false" />
         <div class="flex min-h-full items-center justify-center p-4">
-          <div class="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouvelle proposition sensorielle</h3>
+          <div class="relative bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6 border border-gray-700">
+            <h3 class="text-lg font-semibold text-white mb-4">Nouvelle proposition sensorielle</h3>
             <AlertMessage v-if="proposalError" type="error" dismissible @dismiss="proposalError = ''" class="mb-4">
               {{ proposalError }}
             </AlertMessage>

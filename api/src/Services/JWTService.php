@@ -83,10 +83,23 @@ class JWTService
 
     public static function extractTokenFromHeader(): ?string
     {
+        // First check Authorization header
         $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 
         if (preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
             return $matches[1];
+        }
+
+        // Also check Apache-specific header (CGI mode)
+        $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+
+        if (preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
+            return $matches[1];
+        }
+
+        // Fallback to query parameter (for document view/download in new tabs)
+        if (!empty($_GET['token'])) {
+            return $_GET['token'];
         }
 
         return null;

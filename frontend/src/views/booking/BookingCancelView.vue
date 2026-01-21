@@ -126,9 +126,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBookingStore } from '@/stores/booking'
+import { useToastStore } from '@/stores/toast'
 
 const route = useRoute()
 const bookingStore = useBookingStore()
+const toastStore = useToastStore()
 
 const token = computed(() => route.params.token)
 const loading = ref(true)
@@ -166,7 +168,7 @@ onMounted(async () => {
       cancelled.value = true
     }
   } catch (err) {
-    error.value = err.response?.data?.message || 'Réservation non trouvée'
+    error.value = toastStore.parseApiError(err) || 'Réservation non trouvée'
   } finally {
     loading.value = false
   }
@@ -183,7 +185,7 @@ async function cancelBooking() {
       // Already was cancelled
     }
   } catch (err) {
-    error.value = err.response?.data?.message || 'Impossible d\'annuler la réservation'
+    error.value = toastStore.parseApiError(err) || 'Impossible d\'annuler la réservation'
   } finally {
     cancelling.value = false
   }

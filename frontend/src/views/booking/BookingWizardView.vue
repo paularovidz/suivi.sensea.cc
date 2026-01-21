@@ -3,21 +3,8 @@
     <!-- Progress bar -->
     <BookingProgressBar :current-step="bookingStore.currentStep" />
 
-    <!-- Error message -->
-    <div
-      v-if="bookingStore.error"
-      class="mb-6 bg-red-900/30 border border-red-500/50 rounded-lg p-4 flex items-start"
-    >
-      <svg class="w-5 h-5 text-red-400 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-      </svg>
-      <div>
-        <p class="text-sm text-red-300">{{ bookingStore.error }}</p>
-      </div>
-    </div>
-
     <!-- Step content -->
-    <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-gray-700/50 overflow-hidden">
+    <div class="card-dark shadow-lg overflow-hidden">
       <ClientTypeStep v-if="bookingStore.currentStep === 1" />
       <PersonSelectionStep v-else-if="bookingStore.currentStep === 2" />
       <DateTimeStep v-else-if="bookingStore.currentStep === 3" />
@@ -68,6 +55,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useBookingStore } from '@/stores/booking'
+import { useToastStore } from '@/stores/toast'
 import BookingProgressBar from '@/components/booking/BookingProgressBar.vue'
 import ClientTypeStep from './steps/ClientTypeStep.vue'
 import PersonSelectionStep from './steps/PersonSelectionStep.vue'
@@ -76,6 +64,7 @@ import ContactInfoStep from './steps/ContactInfoStep.vue'
 import ConfirmationStep from './steps/ConfirmationStep.vue'
 
 const bookingStore = useBookingStore()
+const toastStore = useToastStore()
 
 onMounted(async () => {
   // Try to restore from storage
@@ -92,7 +81,8 @@ async function handleNext() {
       await bookingStore.createBooking()
       bookingStore.nextStep()
     } catch (err) {
-      // Error is handled in store
+      // Afficher l'erreur via toast
+      toastStore.apiError(err, 'Impossible de créer la réservation')
     }
   } else {
     bookingStore.nextStep()

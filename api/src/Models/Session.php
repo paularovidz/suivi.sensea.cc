@@ -113,6 +113,25 @@ class Session
         return $sessions;
     }
 
+    /**
+     * Récupère les séances pour une date donnée (pour la vérification de disponibilité)
+     */
+    public static function getSessionsForDate(\DateTime $date): array
+    {
+        $db = Database::getInstance();
+        $dateStr = $date->format('Y-m-d');
+
+        $stmt = $db->prepare('
+            SELECT id, session_date, duration_minutes
+            FROM sessions
+            WHERE DATE(session_date) = :date
+            ORDER BY session_date
+        ');
+        $stmt->execute(['date' => $dateStr]);
+
+        return $stmt->fetchAll();
+    }
+
     public static function findByUser(string $userId, int $limit = 50, int $offset = 0): array
     {
         $db = Database::getInstance();
@@ -471,17 +490,32 @@ class Session
         ];
     }
 
-    public static function getCalendarData(int $year, int $month): array
+    public static function getCalendarData(int $year, int $month, ?string $userId = null): array
     {
         $db = Database::getInstance();
 
-        $stmt = $db->prepare("
-            SELECT DATE(session_date) as date, COUNT(*) as count
-            FROM sessions
-            WHERE YEAR(session_date) = :year AND MONTH(session_date) = :month
-            GROUP BY DATE(session_date)
-        ");
-        $stmt->execute(['year' => $year, 'month' => $month]);
+        if ($userId === null) {
+            // Admin: all sessions
+            $stmt = $db->prepare("
+                SELECT DATE(session_date) as date, COUNT(*) as count
+                FROM sessions
+                WHERE YEAR(session_date) = :year AND MONTH(session_date) = :month
+                GROUP BY DATE(session_date)
+            ");
+            $stmt->execute(['year' => $year, 'month' => $month]);
+        } else {
+            // User: only sessions for assigned persons
+            $stmt = $db->prepare("
+                SELECT DATE(s.session_date) as date, COUNT(*) as count
+                FROM sessions s
+                INNER JOIN user_persons up ON s.person_id = up.person_id
+                WHERE up.user_id = :user_id
+                  AND YEAR(s.session_date) = :year
+                  AND MONTH(s.session_date) = :month
+                GROUP BY DATE(s.session_date)
+            ");
+            $stmt->execute(['user_id' => $userId, 'year' => $year, 'month' => $month]);
+        }
 
         return $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
     }

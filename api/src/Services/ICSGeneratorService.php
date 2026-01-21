@@ -23,7 +23,7 @@ class ICSGeneratorService
         $startDate = new \DateTime($booking['session_date'], new \DateTimeZone($timezone));
         $endDate = (clone $startDate)->modify("+{$booking['duration_blocked_minutes']} minutes");
 
-        $summary = "Séance Snoezelen - {$booking['person_first_name']} {$booking['person_last_name']}";
+        $summary = self::buildSummary($booking, $startDate);
         $description = self::buildDescription($booking);
         $uid = $booking['id'] . '@' . parse_url(self::env('APP_URL', 'sensea.cc'), PHP_URL_HOST);
 
@@ -34,9 +34,9 @@ class ICSGeneratorService
             'start' => $startDate,
             'end' => $endDate,
             'timezone' => $timezone,
-            'location' => 'Sensea Snoezelen',
+            'location' => 'sensëa Snoezelen',
             'organizer_email' => self::env('MAIL_FROM', 'noreply@sensea.cc'),
-            'organizer_name' => 'Sensea Snoezelen'
+            'organizer_name' => 'sensëa Snoezelen'
         ]);
 
         return $ics;
@@ -56,16 +56,44 @@ class ICSGeneratorService
 
             $events[] = [
                 'uid' => $booking['id'] . '@' . parse_url(self::env('APP_URL', 'sensea.cc'), PHP_URL_HOST),
-                'summary' => "Séance Snoezelen - {$booking['person_first_name']} {$booking['person_last_name']}",
+                'summary' => self::buildSummary($booking, $startDate),
                 'description' => self::buildDescription($booking),
                 'start' => $startDate,
                 'end' => $endDate,
                 'timezone' => $timezone,
-                'location' => 'Sensea Snoezelen'
+                'location' => 'sensëa Snoezelen'
             ];
         }
 
         return self::buildICSMultiple($events, $timezone);
+    }
+
+    /**
+     * Construit le titre (summary) de l'événement
+     * Format: [Icône] NOM Prénom - 14h30 - 1h05
+     * Icône: 👤 Particulier, 🏢 Association
+     */
+    private static function buildSummary(array $booking, \DateTime $startDate): string
+    {
+        $lastName = mb_strtoupper($booking['person_last_name']);
+        $firstName = $booking['person_first_name'];
+        $time = $startDate->format('H\hi');
+
+        // Icône selon le type de client
+        $isAssociation = ($booking['client_type'] ?? 'personal') === 'association';
+        $icon = $isAssociation ? '🏢' : '👤';
+
+        // Durée totale (séance + ménage)
+        $totalMinutes = (int) $booking['duration_blocked_minutes'];
+        if ($totalMinutes >= 60) {
+            $hours = floor($totalMinutes / 60);
+            $mins = $totalMinutes % 60;
+            $duration = $mins > 0 ? "{$hours}h" . str_pad((string)$mins, 2, '0', STR_PAD_LEFT) : "{$hours}h";
+        } else {
+            $duration = "{$totalMinutes}min";
+        }
+
+        return "{$icon} {$lastName} {$firstName} - {$time} - {$duration}";
     }
 
     /**
@@ -74,11 +102,19 @@ class ICSGeneratorService
     private static function buildDescription(array $booking): string
     {
         $type = $booking['duration_type'] === 'discovery' ? 'Séance découverte' : 'Séance classique';
-        $duration = $booking['duration_display_minutes'] . ' minutes';
+        $sessionDuration = $booking['duration_display_minutes'] . ' minutes';
+        $totalDuration = $booking['duration_blocked_minutes'] . ' minutes';
+        $pauseDuration = $booking['duration_blocked_minutes'] - $booking['duration_display_minutes'];
+
+        // Type de client
+        $isAssociation = ($booking['client_type'] ?? 'personal') === 'association';
+        $clientType = $isAssociation ? 'Association' : 'Particulier';
 
         $lines = [
             "Type: {$type}",
-            "Durée: {$duration}",
+            "Client: {$clientType}",
+            "Durée séance: {$sessionDuration}",
+            "Durée totale (+ {$pauseDuration}min ménage): {$totalDuration}",
             "",
             "Bénéficiaire: {$booking['person_first_name']} {$booking['person_last_name']}",
             "Contact: {$booking['client_first_name']} {$booking['client_last_name']}",
@@ -88,6 +124,15 @@ class ICSGeneratorService
         if (!empty($booking['client_phone'])) {
             $lines[] = "Téléphone: {$booking['client_phone']}";
         }
+
+        // Nom de l'association si applicable
+        if ($isAssociation && !empty($booking['company_name'])) {
+            $lines[] = "Association: {$booking['company_name']}";
+        }
+
+        // Conseil vestimentaire
+        $lines[] = "";
+        $lines[] = "💡 Conseil: Prévoir une tenue confortable (type vêtements de sport ou souples).";
 
         return implode("\\n", $lines);
     }
@@ -100,10 +145,10 @@ class ICSGeneratorService
         $lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
-            'PRODID:-//Sensea Snoezelen//Booking System//FR',
+            'PRODID:-//sensëa Snoezelen//Booking System//FR',
             'CALSCALE:GREGORIAN',
             'METHOD:PUBLISH',
-            'X-WR-CALNAME:Sensea Snoezelen',
+            'X-WR-CALNAME:sensëa Snoezelen',
             'X-WR-TIMEZONE:' . $event['timezone'],
             '',
             self::generateVTimezone($event['timezone']),
@@ -122,7 +167,7 @@ class ICSGeneratorService
         }
 
         if (!empty($event['organizer_email'])) {
-            $name = $event['organizer_name'] ?? 'Sensea';
+            $name = $event['organizer_name'] ?? 'sensëa';
             $lines[] = 'ORGANIZER;CN=' . self::escapeValue($name) . ':mailto:' . $event['organizer_email'];
         }
 
@@ -147,10 +192,10 @@ class ICSGeneratorService
         $lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
-            'PRODID:-//Sensea Snoezelen//Booking System//FR',
+            'PRODID:-//sensëa Snoezelen//Booking System//FR',
             'CALSCALE:GREGORIAN',
             'METHOD:PUBLISH',
-            'X-WR-CALNAME:Sensea Snoezelen - Réservations',
+            'X-WR-CALNAME:sensëa Snoezelen - Réservations',
             'X-WR-TIMEZONE:' . $timezone,
             '',
             self::generateVTimezone($timezone),

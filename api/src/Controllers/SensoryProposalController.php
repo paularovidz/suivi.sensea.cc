@@ -16,9 +16,6 @@ class SensoryProposalController
     {
         AuthMiddleware::handle();
 
-        $currentUser = AuthMiddleware::getCurrentUser();
-        $isAdmin = AuthMiddleware::isAdmin();
-
         $page = max(1, (int)($_GET['page'] ?? 1));
         $limit = min(100, max(1, (int)($_GET['limit'] ?? 50)));
         $offset = ($page - 1) * $limit;
@@ -29,16 +26,11 @@ class SensoryProposalController
             if (!in_array($type, SensoryProposal::TYPES, true)) {
                 Response::validationError(['type' => 'Type de proposition invalide']);
             }
-            $proposals = SensoryProposal::findByType($type, $isAdmin ? null : $currentUser['id'], $limit);
+            $proposals = SensoryProposal::findByType($type, $limit);
             $total = count($proposals);
         } else {
-            if ($isAdmin) {
-                $proposals = SensoryProposal::findAll($limit, $offset);
-                $total = SensoryProposal::count();
-            } else {
-                $proposals = SensoryProposal::findAccessible($currentUser['id'], $limit, $offset);
-                $total = count($proposals);
-            }
+            $proposals = SensoryProposal::findAll($limit, $offset);
+            $total = SensoryProposal::count();
         }
 
         Response::success([
@@ -57,18 +49,10 @@ class SensoryProposalController
     {
         AuthMiddleware::handle();
 
-        $currentUser = AuthMiddleware::getCurrentUser();
-        $isAdmin = AuthMiddleware::isAdmin();
-
         $proposal = SensoryProposal::findById($id);
 
         if (!$proposal) {
             Response::notFound('Proposition non trouvée');
-        }
-
-        // Check access
-        if (!SensoryProposal::canAccess($id, $currentUser['id'], $isAdmin)) {
-            Response::forbidden('Accès non autorisé');
         }
 
         Response::success($proposal);
@@ -77,9 +61,6 @@ class SensoryProposalController
     public function search(): void
     {
         AuthMiddleware::handle();
-
-        $currentUser = AuthMiddleware::getCurrentUser();
-        $isAdmin = AuthMiddleware::isAdmin();
 
         $query = $_GET['q'] ?? '';
         $type = $_GET['type'] ?? null;
@@ -93,12 +74,7 @@ class SensoryProposalController
             Response::validationError(['type' => 'Type de proposition invalide']);
         }
 
-        $proposals = SensoryProposal::search(
-            $query,
-            $type,
-            $isAdmin ? null : $currentUser['id'],
-            $limit
-        );
+        $proposals = SensoryProposal::search($query, $type, $limit);
 
         Response::success([
             'proposals' => $proposals,
@@ -112,7 +88,6 @@ class SensoryProposalController
         AuthMiddleware::handle();
 
         $currentUser = AuthMiddleware::getCurrentUser();
-        $isAdmin = AuthMiddleware::isAdmin();
 
         $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
@@ -123,13 +98,7 @@ class SensoryProposalController
             ->maxLength('description', 2000);
         $validator->validate();
 
-        // Only admins can create global proposals
-        if (!$isAdmin && !empty($data['is_global'])) {
-            Response::forbidden('Seuls les administrateurs peuvent créer des propositions globales');
-        }
-
         $data['created_by'] = $currentUser['id'];
-        $data['is_global'] = $isAdmin && !empty($data['is_global']);
 
         $proposalId = SensoryProposal::create($data);
         $proposal = SensoryProposal::findById($proposalId);
@@ -179,11 +148,6 @@ class SensoryProposalController
         }
 
         $validator->validate();
-
-        // Only admins can change global status
-        if (!$isAdmin && isset($data['is_global'])) {
-            unset($data['is_global']);
-        }
 
         // Don't allow changing created_by
         unset($data['created_by']);

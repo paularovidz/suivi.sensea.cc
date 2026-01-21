@@ -47,7 +47,7 @@ class BookingMailService
         $this->mailer->CharSet = 'UTF-8';
         $this->mailer->setFrom(
             self::env('MAIL_FROM', 'noreply@sensea.cc'),
-            self::env('MAIL_FROM_NAME', 'Sensea Snoezelen')
+            self::env('MAIL_FROM_NAME', 'sensëa Snoezelen')
         );
     }
 
@@ -62,7 +62,7 @@ class BookingMailService
             $this->mailer->addAddress($booking['client_email'], "{$booking['client_first_name']} {$booking['client_last_name']}");
 
             $this->mailer->isHTML(true);
-            $this->mailer->Subject = 'Confirmez votre rendez-vous - Sensea Snoezelen';
+            $this->mailer->Subject = 'Confirmez votre rendez-vous - sensëa Snoezelen';
 
             $confirmLink = self::env('FRONTEND_URL', 'http://localhost:5173') . '/booking/confirm/' . $booking['confirmation_token'];
             $cancelLink = self::env('FRONTEND_URL', 'http://localhost:5173') . '/booking/cancel/' . $booking['confirmation_token'];
@@ -164,7 +164,7 @@ class BookingMailService
             $this->mailer->addAddress($booking['client_email'], "{$booking['client_first_name']} {$booking['client_last_name']}");
 
             $this->mailer->isHTML(true);
-            $this->mailer->Subject = 'Annulation de votre rendez-vous - Sensea Snoezelen';
+            $this->mailer->Subject = 'Annulation de votre rendez-vous - sensëa Snoezelen';
 
             $this->mailer->Body = $this->getCancellationHtml($booking);
             $this->mailer->AltBody = $this->getCancellationText($booking);
@@ -192,7 +192,7 @@ class BookingMailService
             $this->mailer->addStringAttachment($icsContent, 'rendez-vous-sensea.ics', 'base64', 'text/calendar');
 
             $this->mailer->isHTML(true);
-            $this->mailer->Subject = 'Rendez-vous confirmé - Sensea Snoezelen';
+            $this->mailer->Subject = 'Rendez-vous confirmé - sensëa Snoezelen';
 
             $this->mailer->Body = $this->getBookingConfirmedHtml($booking);
             $this->mailer->AltBody = $this->getBookingConfirmedText($booking);
@@ -228,7 +228,7 @@ class BookingMailService
                 <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                     <tr>
                         <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Sensea Snoezelen</h1>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">sensëa Snoezelen</h1>
                         </td>
                     </tr>
                     <tr>
@@ -264,6 +264,12 @@ class BookingMailService
                                 </table>
                             </div>
 
+                            <div style="background-color: #e8f4fd; border: 1px solid #b8daff; border-radius: 8px; padding: 15px; margin-bottom: 30px;">
+                                <p style="margin: 0; font-size: 14px; color: #004085;">
+                                    <strong>Conseil :</strong> Pensez à vous habiller confortablement pour la séance, idéalement une tenue de sport ou des vêtements souples.
+                                </p>
+                            </div>
+
                             <table role="presentation" style="margin: 0 auto 20px;">
                                 <tr>
                                     <td style="border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
@@ -286,7 +292,7 @@ class BookingMailService
                     <tr>
                         <td style="padding: 20px 40px; background-color: #f8f9fa; border-radius: 0 0 12px 12px; text-align: center;">
                             <p style="margin: 0; font-size: 12px; color: #999;">
-                                Sensea Snoezelen<br>
+                                sensëa Snoezelen<br>
                                 Cet email a été envoyé suite à votre demande de rendez-vous.
                             </p>
                         </td>
@@ -317,6 +323,8 @@ Type : {$type}
 Durée : {$booking['duration_display_minutes']} minutes
 Pour : {$booking['person_first_name']} {$booking['person_last_name']}
 
+CONSEIL : Pensez à vous habiller confortablement pour la séance, idéalement une tenue de sport ou des vêtements souples.
+
 Pour confirmer votre rendez-vous, cliquez sur ce lien :
 {$confirmLink}
 
@@ -326,7 +334,7 @@ Pour annuler :
 Ce lien est valable 24 heures.
 
 ---
-Sensea Snoezelen
+sensëa Snoezelen
 TEXT;
     }
 
@@ -436,8 +444,13 @@ TEXT;
                             <p style="margin: 0 0 20px; font-size: 16px; color: #555;">
                                 Pour : <strong>{$booking['person_first_name']} {$booking['person_last_name']}</strong>
                             </p>
+                            <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                                <p style="margin: 0; font-size: 14px; color: #856404;">
+                                    <strong>Rappel :</strong> Pensez à vous habiller confortablement, idéalement une tenue de sport ou des vêtements souples.
+                                </p>
+                            </div>
                             <p style="margin: 0; font-size: 14px; color: #888;">
-                                À demain !<br>L'équipe Sensea Snoezelen
+                                À demain !<br>L'équipe sensëa Snoezelen
                             </p>
                         </td>
                     </tr>
@@ -462,8 +475,10 @@ Nous vous rappelons votre séance Snoezelen demain.
 Date : {$dateFormatted}
 Pour : {$booking['person_first_name']} {$booking['person_last_name']}
 
+RAPPEL : Pensez à vous habiller confortablement, idéalement une tenue de sport ou des vêtements souples.
+
 À demain !
-L'équipe Sensea Snoezelen
+L'équipe sensëa Snoezelen
 TEXT;
     }
 
@@ -493,7 +508,7 @@ TEXT;
                             </p>
                             <p style="margin: 0; font-size: 14px; color: #888;">
                                 N'hésitez pas à reprendre rendez-vous quand vous le souhaitez.<br>
-                                L'équipe Sensea Snoezelen
+                                L'équipe sensëa Snoezelen
                             </p>
                         </td>
                     </tr>
@@ -517,7 +532,7 @@ Votre rendez-vous du {$dateFormatted} pour {$booking['person_first_name']} {$boo
 
 N'hésitez pas à reprendre rendez-vous quand vous le souhaitez.
 
-L'équipe Sensea Snoezelen
+L'équipe sensëa Snoezelen
 TEXT;
     }
 
@@ -569,10 +584,16 @@ TEXT;
                                 </table>
                             </div>
 
+                            <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 30px;">
+                                <p style="margin: 0; font-size: 14px; color: #856404;">
+                                    <strong>Conseil :</strong> Pensez à vous habiller confortablement pour la séance, idéalement une tenue de sport ou des vêtements souples.
+                                </p>
+                            </div>
+
                             <p style="margin: 0; font-size: 14px; color: #888;">
                                 Un fichier calendrier (.ics) est joint à cet email pour l'ajouter à votre agenda.<br><br>
                                 À bientôt !<br>
-                                L'équipe Sensea Snoezelen
+                                L'équipe sensëa Snoezelen
                             </p>
                         </td>
                     </tr>
@@ -601,10 +622,12 @@ Date : {$dateFormatted}
 Type : {$type}
 Pour : {$booking['person_first_name']} {$booking['person_last_name']}
 
+CONSEIL : Pensez à vous habiller confortablement pour la séance, idéalement une tenue de sport ou des vêtements souples.
+
 Un fichier calendrier (.ics) est joint à cet email.
 
 À bientôt !
-L'équipe Sensea Snoezelen
+L'équipe sensëa Snoezelen
 TEXT;
     }
 }

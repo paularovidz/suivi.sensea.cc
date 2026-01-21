@@ -12,6 +12,9 @@ function env(string $key, ?string $default = null): ?string
     return $_ENV[$key] ?? getenv($key) ?: $default;
 }
 
+// Parse command line arguments
+$fresh = in_array('--fresh', $argv, true) || in_array('fresh', $argv, true);
+
 // Load environment variables (optional, Docker provides them via docker-compose)
 try {
     $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
@@ -31,8 +34,16 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     ]);
 
-    // Create database if not exists
     $dbName = env('DB_NAME', 'snoezelen_db');
+
+    // Fresh mode: drop and recreate database
+    if ($fresh) {
+        echo "\n🗑️  Mode FRESH: Suppression de la base de données...\n";
+        $pdo->exec("DROP DATABASE IF EXISTS `{$dbName}`");
+        echo "✓ Base de données supprimée\n\n";
+    }
+
+    // Create database if not exists
     $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     $pdo->exec("USE `{$dbName}`");
 

@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+  <div class="min-h-screen bg-dark">
     <!-- Header (can be hidden for embed mode) -->
-    <header v-if="!isEmbed" class="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700/50">
+    <header v-if="!isEmbed" class="header-dark">
       <div class="max-w-5xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
@@ -9,7 +9,7 @@
               <span class="text-white text-lg font-bold">S</span>
             </div>
             <div>
-              <h1 class="text-xl font-semibold text-white">Sensea Snoezelen</h1>
+              <h1 class="text-xl font-semibold text-white">sensëa Snoezelen</h1>
               <p class="text-sm text-gray-400">Réservation de séance</p>
             </div>
           </div>
@@ -28,7 +28,7 @@
     <footer v-if="!isEmbed" class="mt-auto py-6">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <p class="text-center text-sm text-gray-500">
-          &copy; {{ new Date().getFullYear() }} Sensea Snoezelen. Tous droits réservés.
+          &copy; {{ new Date().getFullYear() }} sensëa Snoezelen. Tous droits réservés.
         </p>
       </div>
     </footer>

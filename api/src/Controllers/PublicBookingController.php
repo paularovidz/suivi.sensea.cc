@@ -290,10 +290,15 @@ class PublicBookingController
             ->inArray('duration_type', Booking::TYPES)
             ->required('client_email')
             ->email('client_email')
+            ->phone('client_phone')
             ->required('client_first_name')
+            ->minLength('client_first_name', 2, 'Le prénom doit contenir au moins 2 caractères')
             ->required('client_last_name')
+            ->minLength('client_last_name', 2, 'Le nom doit contenir au moins 2 caractères')
             ->required('person_first_name')
+            ->minLength('person_first_name', 2, 'Le prénom du bénéficiaire doit contenir au moins 2 caractères')
             ->required('person_last_name')
+            ->minLength('person_last_name', 2, 'Le nom du bénéficiaire doit contenir au moins 2 caractères')
             ->required('gdpr_consent');
 
         $errors = $validator->validate();

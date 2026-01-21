@@ -46,7 +46,7 @@ services:
       MAIL_USER: ""
       MAIL_PASS: ""
       MAIL_FROM: noreply@sensea.local
-      MAIL_FROM_NAME: Sensea Snoezelen
+      MAIL_FROM_NAME: sensëa Snoezelen
       APP_URL: http://localhost:8080
       FRONTEND_URL: http://localhost:5173
       ENV: development

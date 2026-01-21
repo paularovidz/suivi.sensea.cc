@@ -46,7 +46,7 @@ class SMSService
         }
 
         $dateFormatted = (new \DateTime($booking['session_date']))->format('d/m à H:i');
-        $message = "Rappel Sensea: Votre séance pour {$booking['person_first_name']} est prévue demain {$dateFormatted}. A bientôt !";
+        $message = "Rappel sensëa: Votre séance pour {$booking['person_first_name']} est prévue demain {$dateFormatted}. A bientôt !";
 
         return self::send(
             $booking['client_phone'],
@@ -70,7 +70,7 @@ class SMSService
         }
 
         $dateFormatted = (new \DateTime($booking['session_date']))->format('d/m/Y à H:i');
-        $message = "Sensea: Votre RDV du {$dateFormatted} pour {$booking['person_first_name']} est confirmé. A bientôt !";
+        $message = "sensëa: Votre RDV du {$dateFormatted} pour {$booking['person_first_name']} est confirmé. A bientôt !";
 
         return self::send(
             $booking['client_phone'],
@@ -94,7 +94,7 @@ class SMSService
         }
 
         $dateFormatted = (new \DateTime($booking['session_date']))->format('d/m/Y');
-        $message = "Sensea: Votre RDV du {$dateFormatted} a été annulé. N'hésitez pas à reprendre RDV sur notre site.";
+        $message = "sensëa: Votre RDV du {$dateFormatted} a été annulé. N'hésitez pas à reprendre RDV sur notre site.";
 
         return self::send(
             $booking['client_phone'],
@@ -135,7 +135,7 @@ class SMSService
             $body = [
                 'message' => $message,
                 'receivers' => [$formattedPhone],
-                'sender' => 'Sensea', // Nom de l'expéditeur (max 11 caractères)
+                'sender' => 'sensëa', // Nom de l'expéditeur (max 11 caractères)
                 'noStopClause' => true, // Pas de mention STOP (pour SMS transactionnels)
                 'priority' => 'high',
                 'validityPeriod' => 2880 // 48h de validité
