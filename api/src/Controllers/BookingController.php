@@ -8,11 +8,15 @@ use App\Middleware\AuthMiddleware;
 use App\Models\Session;
 use App\Models\Person;
 use App\Models\User;
+use App\Models\LoyaltyCard;
+use App\Models\Setting;
+use App\Models\PromoCode;
 use App\Services\AuditService;
 use App\Services\AvailabilityService;
 use App\Services\BookingMailService;
 use App\Services\ICSGeneratorService;
 use App\Services\SMSService;
+use App\Services\MailService;
 use App\Utils\Response;
 use App\Utils\Validator;
 
@@ -435,6 +439,48 @@ class BookingController
         // Marquer la session comme complétée
         Session::complete($id);
 
+        // Gérer la carte de fidélité
+        $loyaltyPromoGenerated = null;
+
+        // Vérifier si c'est une séance gratuite (via code promo free_session)
+        $isFreeSession = false;
+        if (!empty($session['promo_code_id'])) {
+            $isFreeSession = PromoCode::isFreeSession($session['promo_code_id']);
+        }
+
+        // Incrémenter la fidélité seulement si ce n'est PAS une séance gratuite
+        if (!$isFreeSession && !empty($session['user_id'])) {
+            $user = User::findById($session['user_id']);
+
+            if ($user && User::isPersonalClient($session['user_id'])) {
+                $sessionsRequired = Setting::getInteger('loyalty_sessions_required', 9);
+                $loyaltyResult = LoyaltyCard::incrementSessions($session['user_id'], $sessionsRequired);
+
+                // Si la carte vient d'être complétée, générer un code promo
+                if ($loyaltyResult['just_completed']) {
+                    $userName = $user['first_name'] . ' ' . $user['last_name'];
+                    $promoData = PromoCode::generateLoyaltyCode($session['user_id'], $userName);
+
+                    // Envoyer l'email avec le code promo
+                    if (!empty($user['email'])) {
+                        $mailService = new MailService();
+                        $mailService->sendLoyaltyPromoCode(
+                            $user['email'],
+                            $user['first_name'],
+                            $promoData['code']
+                        );
+                    }
+
+                    $loyaltyPromoGenerated = [
+                        'user_id' => $session['user_id'],
+                        'user_name' => $userName,
+                        'promo_code' => $promoData['code'],
+                        'message' => "Code promo fidélité généré et envoyé par email : {$promoData['code']}"
+                    ];
+                }
+            }
+        }
+
         AuditService::log(
             $currentUser['id'],
             'session_completed',
@@ -445,9 +491,13 @@ class BookingController
         );
 
         $session = Session::findById($id);
-        Response::success([
-            'session' => $session
-        ], 'Séance marquée comme effectuée');
+        $response = ['session' => $session];
+
+        if ($loyaltyPromoGenerated) {
+            $response['loyalty_promo_generated'] = $loyaltyPromoGenerated;
+        }
+
+        Response::success($response, 'Séance marquée comme effectuée');
     }
 
     /**

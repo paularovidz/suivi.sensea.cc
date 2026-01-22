@@ -477,6 +477,89 @@ class PromoCode
         return (int)$stmt->fetchColumn() > 0;
     }
 
+    /**
+     * Récupère tous les codes promo disponibles pour un utilisateur
+     * Inclut les codes globaux et les codes ciblés pour cet utilisateur
+     * @param string|null $excludeSessionId Session à exclure du comptage des utilisations (pour l'édition)
+     */
+    public static function getAvailableForUser(
+        ?string $userId = null,
+        ?string $clientType = null,
+        ?string $durationType = null,
+        ?string $excludeSessionId = null
+    ): array {
+        $db = Database::getInstance();
+        $now = (new \DateTime())->format('Y-m-d H:i:s');
+
+        // Récupérer tous les codes actifs et dans leur période de validité
+        $stmt = $db->prepare("
+            SELECT pc.*,
+                   tu.first_name as target_first_name,
+                   tu.last_name as target_last_name,
+                   tu.email as target_email
+            FROM promo_codes pc
+            LEFT JOIN users tu ON pc.target_user_id = tu.id
+            WHERE pc.is_active = 1
+            AND (pc.valid_from IS NULL OR pc.valid_from <= :now1)
+            AND (pc.valid_until IS NULL OR pc.valid_until >= :now2)
+            ORDER BY pc.name ASC
+        ");
+        $stmt->execute(['now1' => $now, 'now2' => $now]);
+
+        $allPromos = $stmt->fetchAll();
+        $availablePromos = [];
+
+        foreach ($allPromos as $promo) {
+            $promo = self::castBooleans($promo);
+            // Compter les utilisations en excluant la session en cours d'édition
+            $promo['usage_count'] = self::getUsageCount($promo['id'], $excludeSessionId);
+
+            // Vérifier les limites d'utilisation totales
+            if ($promo['max_uses_total'] !== null && $promo['usage_count'] >= $promo['max_uses_total']) {
+                continue; // Code épuisé
+            }
+
+            // Vérifier si le code est ciblé pour un autre utilisateur
+            if (!empty($promo['target_user_id'])) {
+                if ($userId === null || $promo['target_user_id'] !== $userId) {
+                    continue; // Code réservé à un autre utilisateur
+                }
+            }
+
+            // Vérifier le type de client si spécifié
+            if (!empty($promo['target_client_type']) && $clientType !== null) {
+                if ($promo['target_client_type'] !== $clientType) {
+                    continue; // Code réservé à un autre type de client
+                }
+            }
+
+            // Vérifier le type de séance si spécifié
+            if ($durationType !== null) {
+                if ($durationType === 'discovery' && !$promo['applies_to_discovery']) {
+                    continue;
+                }
+                if ($durationType === 'regular' && !$promo['applies_to_regular']) {
+                    continue;
+                }
+            }
+
+            // Vérifier les limites par utilisateur (en excluant la session en cours)
+            if ($promo['max_uses_per_user'] !== null && $userId !== null) {
+                $userUsageCount = self::getUserUsageCount($promo['id'], $userId, $excludeSessionId);
+                if ($userUsageCount >= $promo['max_uses_per_user']) {
+                    continue; // Utilisateur a atteint sa limite
+                }
+            }
+
+            // Ajouter le label de remise
+            $promo['discount_label'] = self::getDiscountLabel($promo);
+
+            $availablePromos[] = $promo;
+        }
+
+        return $availablePromos;
+    }
+
     // =========================================================================
     // CALCUL DE REMISE
     // =========================================================================
@@ -575,30 +658,72 @@ class PromoCode
     }
 
     /**
-     * Compte le nombre total d'utilisations d'un code promo
+     * Vérifie si un code promo est une séance gratuite (fidélité ou autre)
      */
-    public static function getUsageCount(string $promoCodeId): int
+    public static function isFreeSession(string $promoCodeId): bool
+    {
+        $promo = self::findById($promoCodeId);
+        return $promo && $promo['discount_type'] === self::DISCOUNT_TYPE_FREE_SESSION;
+    }
+
+    /**
+     * Supprime l'utilisation d'un code promo pour une session donnée
+     */
+    public static function deleteUsageBySession(string $sessionId): bool
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare('SELECT COUNT(*) FROM promo_code_usages WHERE promo_code_id = :id');
-        $stmt->execute(['id' => $promoCodeId]);
+        $stmt = $db->prepare('DELETE FROM promo_code_usages WHERE session_id = :session_id');
+        return $stmt->execute(['session_id' => $sessionId]);
+    }
+
+    /**
+     * Compte le nombre total d'utilisations d'un code promo
+     * @param string|null $excludeSessionId Session à exclure du comptage
+     */
+    public static function getUsageCount(string $promoCodeId, ?string $excludeSessionId = null): int
+    {
+        $db = Database::getInstance();
+
+        if ($excludeSessionId) {
+            $stmt = $db->prepare('SELECT COUNT(*) FROM promo_code_usages WHERE promo_code_id = :id AND session_id != :exclude_session');
+            $stmt->execute(['id' => $promoCodeId, 'exclude_session' => $excludeSessionId]);
+        } else {
+            $stmt = $db->prepare('SELECT COUNT(*) FROM promo_code_usages WHERE promo_code_id = :id');
+            $stmt->execute(['id' => $promoCodeId]);
+        }
+
         return (int)$stmt->fetchColumn();
     }
 
     /**
      * Compte le nombre d'utilisations d'un code par un utilisateur
+     * @param string|null $excludeSessionId Session à exclure du comptage
      */
-    public static function getUserUsageCount(string $promoCodeId, string $userId): int
+    public static function getUserUsageCount(string $promoCodeId, string $userId, ?string $excludeSessionId = null): int
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare('
-            SELECT COUNT(*) FROM promo_code_usages
-            WHERE promo_code_id = :promo_id AND user_id = :user_id
-        ');
-        $stmt->execute([
-            'promo_id' => $promoCodeId,
-            'user_id' => $userId
-        ]);
+
+        if ($excludeSessionId) {
+            $stmt = $db->prepare('
+                SELECT COUNT(*) FROM promo_code_usages
+                WHERE promo_code_id = :promo_id AND user_id = :user_id AND session_id != :exclude_session
+            ');
+            $stmt->execute([
+                'promo_id' => $promoCodeId,
+                'user_id' => $userId,
+                'exclude_session' => $excludeSessionId
+            ]);
+        } else {
+            $stmt = $db->prepare('
+                SELECT COUNT(*) FROM promo_code_usages
+                WHERE promo_code_id = :promo_id AND user_id = :user_id
+            ');
+            $stmt->execute([
+                'promo_id' => $promoCodeId,
+                'user_id' => $userId
+            ]);
+        }
+
         return (int)$stmt->fetchColumn();
     }
 
@@ -706,6 +831,43 @@ class PromoCode
         $stmt->execute($params);
 
         return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Génère un code promo de fidélité pour un utilisateur
+     * Réinitialise également la carte de fidélité
+     * @return array Le code promo créé avec son code
+     */
+    public static function generateLoyaltyCode(string $userId, string $userName): array
+    {
+        // Générer un code unique avec préfixe FIDEL-
+        $code = 'FIDEL-' . self::generateRandomCode(6);
+
+        // Créer le code promo
+        $promoId = self::create([
+            'code' => $code,
+            'name' => "Séance gratuite fidélité - {$userName}",
+            'description' => "Code de fidélité généré automatiquement après 9 séances payées",
+            'discount_type' => self::DISCOUNT_TYPE_FREE_SESSION,
+            'discount_value' => 100,
+            'application_mode' => self::MODE_MANUAL,
+            'target_user_id' => $userId,
+            'max_uses_total' => 1,
+            'max_uses_per_user' => 1,
+            'applies_to_discovery' => true,
+            'applies_to_regular' => true,
+            'is_active' => true,
+            'created_by' => null // Généré automatiquement par le système
+        ]);
+
+        // Réinitialiser la carte de fidélité immédiatement
+        // Le client peut recommencer à accumuler des séances
+        LoyaltyCard::resetCard($userId);
+
+        return [
+            'id' => $promoId,
+            'code' => $code
+        ];
     }
 
     /**

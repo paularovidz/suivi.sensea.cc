@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useSessionsStore } from '@/stores/sessions'
 import { usePersonsStore } from '@/stores/persons'
 import { useProposalsStore } from '@/stores/proposals'
+import { promoCodesApi } from '@/services/api'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
 
@@ -23,6 +24,21 @@ const newProposal = ref({ title: '', type: 'tactile', description: '' })
 const proposalCreating = ref(false)
 const proposalError = ref('')
 const personSearch = ref('')
+
+// Promo codes
+const availablePromoCodes = ref([])
+const promoCodeSearch = ref('')
+const showPromoCodeDropdown = ref(false)
+const selectedPromoCode = ref(null)
+const sessionUserId = ref(null)
+const originalPrice = ref(null) // Prix avant remise
+
+// Quick promo creation
+const showQuickPromo = ref(false)
+const quickPromoType = ref('percentage') // 'percentage' or 'fixed_amount'
+const quickPromoValue = ref(null)
+const quickPromoCreating = ref(false)
+const quickPromoError = ref('')
 
 // Get current date/time in local timezone for datetime-local input
 function getLocalDateTime() {
@@ -49,9 +65,9 @@ const form = ref({
   next_session_proposals: '',
   proposals: [],
   price: null,
+  promo_code_id: null,
   is_invoiced: false,
   is_paid: false,
-  is_free_session: false
 })
 
 const loyaltyWarning = ref(null)
@@ -148,6 +164,7 @@ onMounted(async () => {
 
     if (isEdit.value) {
       const session = await sessionsStore.fetchSession(route.params.id)
+      sessionUserId.value = session.user_id || null
       form.value = {
         person_id: session.person_id,
         session_date: session.session_date?.replace(' ', 'T').slice(0, 16) || '',
@@ -170,17 +187,47 @@ onMounted(async () => {
           appreciation: p.appreciation || ''
         })),
         price: session.price ?? null,
+        promo_code_id: session.promo_code_id || null,
         is_invoiced: session.is_invoiced || false,
-        is_paid: session.is_paid || false,
-        is_free_session: session.is_free_session || false
+        is_paid: session.is_paid || false
+      }
+
+      // Charger le code promo actuel si présent
+      if (session.promo_code_id && session.promo_code) {
+        selectedPromoCode.value = session.promo_code
+        // Stocker le prix original (avant remise) si disponible
+        if (session.original_price !== null && session.original_price !== undefined) {
+          originalPrice.value = Number(session.original_price)
+        }
       }
     }
+
+    // Charger les codes promo disponibles
+    await fetchAvailablePromoCodes()
   } catch (e) {
     console.error('Error loading form data:', e)
   } finally {
     loading.value = false
   }
 })
+
+async function fetchAvailablePromoCodes() {
+  try {
+    const params = {}
+    if (sessionUserId.value) {
+      params.user_id = sessionUserId.value
+    }
+    // En mode édition, exclure la session actuelle du comptage des utilisations
+    // pour que le code promo déjà appliqué reste visible
+    if (isEdit.value && route.params.id) {
+      params.exclude_session_id = route.params.id
+    }
+    const response = await promoCodesApi.getAvailable(params)
+    availablePromoCodes.value = response.data.data.promo_codes || []
+  } catch (e) {
+    console.error('Error fetching promo codes:', e)
+  }
+}
 
 const showProposalDropdown = ref(false)
 
@@ -248,6 +295,142 @@ function toggleCommunication(value) {
   }
 }
 
+// Promo code functions
+const filteredPromoCodes = computed(() => {
+  if (!promoCodeSearch.value) return availablePromoCodes.value
+  const search = promoCodeSearch.value.toLowerCase()
+  return availablePromoCodes.value.filter(p =>
+    p.name.toLowerCase().includes(search) ||
+    (p.code && p.code.toLowerCase().includes(search)) ||
+    (p.discount_label && p.discount_label.toLowerCase().includes(search))
+  )
+})
+
+function calculateDiscountedPrice(promo, price) {
+  if (!promo || price === null || price === undefined) return price
+
+  let discountAmount = 0
+  const discountValue = Number(promo.discount_value)
+
+  switch (promo.discount_type) {
+    case 'percentage':
+      discountAmount = price * (discountValue / 100)
+      break
+    case 'fixed_amount':
+      discountAmount = discountValue
+      break
+    case 'free_session':
+      discountAmount = price
+      break
+  }
+
+  return Math.max(0, price - discountAmount)
+}
+
+function selectPromoCode(promo) {
+  // Sauvegarder le prix original si pas encore fait (avant toute remise)
+  if (originalPrice.value === null && form.value.price !== null) {
+    originalPrice.value = form.value.price
+  }
+
+  selectedPromoCode.value = promo
+  form.value.promo_code_id = promo.id
+  promoCodeSearch.value = ''
+  showPromoCodeDropdown.value = false
+
+  // Appliquer la remise depuis le prix original (pour gérer le changement de promo)
+  if (originalPrice.value !== null) {
+    form.value.price = Math.round(calculateDiscountedPrice(promo, originalPrice.value) * 100) / 100
+  }
+}
+
+function clearPromoCode() {
+  selectedPromoCode.value = null
+  form.value.promo_code_id = null
+  promoCodeSearch.value = ''
+
+  // Restaurer le prix original
+  if (originalPrice.value !== null) {
+    form.value.price = originalPrice.value
+    originalPrice.value = null
+  }
+}
+
+function hidePromoCodeDropdown() {
+  setTimeout(() => {
+    showPromoCodeDropdown.value = false
+  }, 200)
+}
+
+function formatPrice(price) {
+  if (price === null || price === undefined) return '0'
+  return Number(price).toFixed(2).replace('.', ',')
+}
+
+async function createQuickPromo() {
+  if (!quickPromoValue.value || quickPromoValue.value <= 0) {
+    quickPromoError.value = 'Veuillez saisir une valeur valide'
+    return
+  }
+
+  if (quickPromoType.value === 'percentage' && quickPromoValue.value > 100) {
+    quickPromoError.value = 'Le pourcentage ne peut pas dépasser 100%'
+    return
+  }
+
+  quickPromoError.value = ''
+  quickPromoCreating.value = true
+
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const discountLabel = quickPromoType.value === 'percentage'
+      ? `-${quickPromoValue.value}%`
+      : `-${quickPromoValue.value}€`
+
+    const promoData = {
+      name: `Remise ${discountLabel} - Séance`,
+      discount_type: quickPromoType.value,
+      discount_value: quickPromoValue.value,
+      application_mode: 'automatic',
+      max_uses_total: 1,
+      target_user_id: sessionUserId.value || null,
+      valid_from: today,
+      is_active: true
+    }
+
+    const response = await promoCodesApi.create(promoData)
+    const newPromo = response.data.data
+
+    // Ajouter le discount_label
+    newPromo.discount_label = quickPromoType.value === 'percentage'
+      ? `-${Number(newPromo.discount_value).toFixed(0)}%`
+      : `-${Number(newPromo.discount_value).toFixed(2).replace('.', ',')} €`
+
+    // Sélectionner automatiquement le nouveau code
+    selectPromoCode(newPromo)
+
+    // Réinitialiser le formulaire
+    showQuickPromo.value = false
+    quickPromoValue.value = null
+    quickPromoType.value = 'percentage'
+
+    // Rafraîchir la liste des codes disponibles
+    await fetchAvailablePromoCodes()
+  } catch (e) {
+    console.error('Error creating quick promo:', e)
+    quickPromoError.value = e.response?.data?.message || 'Erreur lors de la création'
+  } finally {
+    quickPromoCreating.value = false
+  }
+}
+
+function cancelQuickPromo() {
+  showQuickPromo.value = false
+  quickPromoValue.value = null
+  quickPromoType.value = 'percentage'
+  quickPromoError.value = ''
+}
+
 async function handleSubmit() {
   error.value = ''
 
@@ -270,6 +453,12 @@ async function handleSubmit() {
       appreciation: p.appreciation || null,
       order: i
     }))
+  }
+
+  // Ajouter les infos de prix original si un code promo est appliqué
+  if (selectedPromoCode.value && originalPrice.value !== null) {
+    data.original_price = originalPrice.value
+    data.discount_amount = originalPrice.value - (form.value.price || 0)
   }
 
   try {
@@ -557,20 +746,141 @@ function cancel() {
           <h2 class="font-semibold text-white">Facturation</h2>
         </div>
         <div class="p-6 space-y-4">
-          <div class="flex items-center gap-4">
-            <div class="w-32">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <label for="price" class="label">Prix (€)</label>
-              <input
-                id="price"
-                v-model.number="form.price"
-                type="number"
-                min="0"
-                step="1"
-                class="input"
-                placeholder="45"
-                :disabled="form.is_free_session"
-                @wheel.prevent
-              />
+              <div class="flex items-center gap-3">
+                <input
+                  id="price"
+                  v-model.number="form.price"
+                  type="number"
+                  min="0"
+                  step="1"
+                  class="input w-32"
+                  placeholder="45"
+                  :disabled="selectedPromoCode !== null"
+                  @wheel.prevent
+                />
+                <!-- Affichage du prix original barré quand une promo est appliquée -->
+                <div v-if="selectedPromoCode && originalPrice !== null" class="text-sm">
+                  <span class="text-gray-500 line-through">{{ formatPrice(originalPrice) }} €</span>
+                  <span class="text-green-400 ml-2">→ {{ formatPrice(form.price) }} €</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Code promo -->
+            <div>
+              <label class="label">Code promo</label>
+              <div v-if="selectedPromoCode" class="px-3 py-2 bg-green-900/30 border border-green-700 text-green-300 rounded-lg flex items-center justify-between">
+                <div>
+                  <span class="font-medium">{{ selectedPromoCode.name }}</span>
+                  <span v-if="selectedPromoCode.code" class="text-green-400 ml-2">({{ selectedPromoCode.code }})</span>
+                  <span class="ml-2 text-green-200 font-semibold">{{ selectedPromoCode.discount_label }}</span>
+                </div>
+                <button type="button" @click="clearPromoCode" class="text-green-400 hover:text-green-200">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div v-else-if="showQuickPromo" class="space-y-3">
+                <!-- Formulaire rapide de création de promo -->
+                <div class="p-3 bg-gray-700/50 rounded-lg border border-gray-600">
+                  <div class="flex items-center gap-2 mb-3">
+                    <select v-model="quickPromoType" class="input w-auto py-1.5 text-sm">
+                      <option value="percentage">%</option>
+                      <option value="fixed_amount">€</option>
+                    </select>
+                    <input
+                      v-model.number="quickPromoValue"
+                      type="number"
+                      min="0"
+                      :max="quickPromoType === 'percentage' ? 100 : undefined"
+                      step="1"
+                      class="input w-24 py-1.5 text-sm"
+                      placeholder="Valeur"
+                      @wheel.prevent
+                      @keyup.enter="createQuickPromo"
+                    />
+                    <span class="text-gray-400 text-sm">de remise</span>
+                  </div>
+                  <div v-if="quickPromoError" class="text-red-400 text-xs mb-2">{{ quickPromoError }}</div>
+                  <div class="flex gap-2">
+                    <button
+                      type="button"
+                      @click="createQuickPromo"
+                      :disabled="quickPromoCreating || !quickPromoValue"
+                      class="btn-primary text-xs py-1.5 px-3"
+                    >
+                      <LoadingSpinner v-if="quickPromoCreating" size="sm" class="mr-1" />
+                      Appliquer
+                    </button>
+                    <button
+                      type="button"
+                      @click="cancelQuickPromo"
+                      :disabled="quickPromoCreating"
+                      class="btn-secondary text-xs py-1.5 px-3"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="space-y-2">
+                <div class="relative">
+                  <input
+                    v-model="promoCodeSearch"
+                    type="text"
+                    class="input"
+                    placeholder="Rechercher un code promo..."
+                    @focus="showPromoCodeDropdown = true"
+                    @blur="hidePromoCodeDropdown"
+                  />
+                  <div
+                    v-if="showPromoCodeDropdown && filteredPromoCodes.length > 0"
+                    class="absolute z-20 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-auto"
+                  >
+                    <button
+                      v-for="promo in filteredPromoCodes"
+                      :key="promo.id"
+                      type="button"
+                      @mousedown.prevent="selectPromoCode(promo)"
+                      class="w-full px-4 py-2 text-left text-gray-200 hover:bg-gray-600 flex items-center justify-between"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium">{{ promo.name }}</span>
+                        <span v-if="promo.code" class="text-gray-400 text-sm">({{ promo.code }})</span>
+                        <span v-if="promo.application_mode === 'automatic'" class="text-xs bg-purple-600/50 text-purple-200 px-1.5 py-0.5 rounded">Auto</span>
+                      </div>
+                      <span class="text-green-400 font-semibold">{{ promo.discount_label }}</span>
+                    </button>
+                  </div>
+                  <div
+                    v-if="showPromoCodeDropdown && filteredPromoCodes.length === 0 && promoCodeSearch"
+                    class="absolute z-20 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg"
+                  >
+                    <div class="px-4 py-3 text-gray-400 text-sm">
+                      Aucun code promo trouvé pour "{{ promoCodeSearch }}"
+                    </div>
+                  </div>
+                  <div
+                    v-if="showPromoCodeDropdown && availablePromoCodes.length === 0 && !promoCodeSearch"
+                    class="absolute z-20 w-full mt-1 bg-gray-700 border border-gray-600 rounded-lg shadow-lg"
+                  >
+                    <div class="px-4 py-3 text-gray-400 text-sm">
+                      Aucun code promo disponible
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  @click="showQuickPromo = true"
+                  class="text-sm text-primary-400 hover:text-primary-300"
+                >
+                  + Créer une remise rapide
+                </button>
+              </div>
             </div>
           </div>
           <div class="flex flex-wrap gap-6">
@@ -590,15 +900,6 @@ function cancel() {
                 class="w-4 h-4 text-primary-600 border-gray-600 bg-gray-700 rounded focus:ring-primary-500"
               />
               <span class="ml-2 text-sm text-gray-300">Payée</span>
-            </label>
-
-            <label class="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                v-model="form.is_free_session"
-                class="w-4 h-4 text-green-600 border-gray-600 bg-gray-700 rounded focus:ring-green-500"
-              />
-              <span class="ml-2 text-sm text-gray-300">Séance gratuite (fidélité)</span>
             </label>
           </div>
         </div>

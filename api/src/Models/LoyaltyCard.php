@@ -58,8 +58,9 @@ class LoyaltyCard
 
     /**
      * Incrémente le compteur de séances
+     * @return array ['success' => bool, 'just_completed' => bool, 'sessions_count' => int]
      */
-    public static function incrementSessions(string $userId, int $sessionsRequired): bool
+    public static function incrementSessions(string $userId, int $sessionsRequired): array
     {
         $db = Database::getInstance();
 
@@ -68,7 +69,11 @@ class LoyaltyCard
 
         // Ne pas incrémenter si la carte est déjà complétée et la séance gratuite pas encore utilisée
         if ($card['is_completed'] && !$card['free_session_used_at']) {
-            return true; // La carte est en attente d'utilisation de la séance gratuite
+            return [
+                'success' => true,
+                'just_completed' => false,
+                'sessions_count' => $card['sessions_count']
+            ];
         }
 
         // Si la carte était complétée et la séance gratuite utilisée, on repart à zéro
@@ -78,7 +83,9 @@ class LoyaltyCard
         }
 
         $newCount = $card['sessions_count'] + 1;
+        $wasCompleted = $card['is_completed'];
         $isCompleted = $newCount >= $sessionsRequired;
+        $justCompleted = $isCompleted && !$wasCompleted;
 
         $stmt = $db->prepare('
             UPDATE loyalty_cards
@@ -88,12 +95,18 @@ class LoyaltyCard
             WHERE user_id = :user_id
         ');
 
-        return $stmt->execute([
+        $success = $stmt->execute([
             'count' => $newCount,
             'completed' => $isCompleted ? 1 : 0,
             'completed2' => $isCompleted ? 1 : 0,
             'user_id' => $userId
         ]);
+
+        return [
+            'success' => $success,
+            'just_completed' => $justCompleted,
+            'sessions_count' => $newCount
+        ];
     }
 
     /**

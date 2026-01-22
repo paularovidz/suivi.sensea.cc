@@ -16,6 +16,50 @@ use App\Utils\Validator;
 class PublicPromoCodeController
 {
     /**
+     * Résout les informations utilisateur à partir de l'email et du client_type
+     */
+    private function resolveUserContext(?string $email, ?string $providedClientType): array
+    {
+        $userId = null;
+        $clientType = null;
+
+        if ($email) {
+            $user = User::findByEmail($email);
+            if ($user) {
+                $userId = $user['id'];
+                $clientType = $user['client_type'] ?? User::CLIENT_TYPE_PERSONAL;
+            }
+        }
+
+        // Le client_type fourni a priorité (nouveau client)
+        if ($providedClientType && in_array($providedClientType, User::CLIENT_TYPES)) {
+            $clientType = $providedClientType;
+        }
+
+        return ['userId' => $userId, 'clientType' => $clientType];
+    }
+
+    /**
+     * Formate les données d'un code promo pour la réponse API
+     */
+    private function formatPromoResponse(array $promo, bool $includeCode = true): array
+    {
+        $response = [
+            'id' => $promo['id'],
+            'name' => $promo['name'],
+            'discount_type' => $promo['discount_type'],
+            'discount_value' => $promo['discount_value'],
+            'discount_label' => PromoCode::getDiscountLabel($promo)
+        ];
+
+        if ($includeCode && !empty($promo['code'])) {
+            $response['code'] = $promo['code'];
+        }
+
+        return $response;
+    }
+
+    /**
      * POST /public/promo-codes/validate
      * Valide un code promo pour une réservation
      */
@@ -39,24 +83,9 @@ class PublicPromoCodeController
         $durationType = $data['duration_type'];
         $email = isset($data['email']) ? strtolower(trim($data['email'])) : null;
 
-        // Récupérer l'utilisateur si email fourni
-        $userId = null;
-        $clientType = null;
-        if ($email) {
-            $user = User::findByEmail($email);
-            if ($user) {
-                $userId = $user['id'];
-                $clientType = $user['client_type'] ?? User::CLIENT_TYPE_PERSONAL;
-            }
-        }
+        $context = $this->resolveUserContext($email, $data['client_type'] ?? null);
 
-        // Si un client_type est fourni (nouveau client), l'utiliser
-        if (isset($data['client_type']) && in_array($data['client_type'], User::CLIENT_TYPES)) {
-            $clientType = $data['client_type'];
-        }
-
-        // Valider le code
-        $validation = PromoCode::validate($code, $durationType, $userId, $clientType);
+        $validation = PromoCode::validate($code, $durationType, $context['userId'], $context['clientType']);
 
         if (!$validation['valid']) {
             Response::error($validation['error'], 400);
@@ -64,21 +93,12 @@ class PublicPromoCodeController
         }
 
         $promo = $validation['promo'];
-
-        // Calculer la remise
         $originalPrice = Session::getPriceForType($durationType);
         $discount = PromoCode::calculateDiscount($promo, $originalPrice);
 
         Response::success([
             'valid' => true,
-            'promo' => [
-                'id' => $promo['id'],
-                'code' => $promo['code'],
-                'name' => $promo['name'],
-                'discount_type' => $promo['discount_type'],
-                'discount_value' => $promo['discount_value'],
-                'discount_label' => PromoCode::getDiscountLabel($promo)
-            ],
+            'promo' => $this->formatPromoResponse($promo, true),
             'pricing' => $discount
         ]);
     }
@@ -89,10 +109,8 @@ class PublicPromoCodeController
      */
     public function hasManualCodes(): void
     {
-        $hasManualCodes = PromoCode::hasActiveManualCodes();
-
         Response::success([
-            'has_manual_codes' => $hasManualCodes
+            'has_manual_codes' => PromoCode::hasActiveManualCodes()
         ]);
     }
 
@@ -109,24 +127,9 @@ class PublicPromoCodeController
             Response::validationError(['duration_type' => 'Type de séance invalide']);
         }
 
-        // Récupérer l'utilisateur si email fourni
-        $userId = null;
-        $clientType = null;
-        if ($email) {
-            $user = User::findByEmail($email);
-            if ($user) {
-                $userId = $user['id'];
-                $clientType = $user['client_type'] ?? User::CLIENT_TYPE_PERSONAL;
-            }
-        }
+        $context = $this->resolveUserContext($email, $_GET['client_type'] ?? null);
 
-        // Si un client_type est fourni (nouveau client), l'utiliser
-        if (isset($_GET['client_type']) && in_array($_GET['client_type'], User::CLIENT_TYPES)) {
-            $clientType = $_GET['client_type'];
-        }
-
-        // Chercher une promo automatique applicable
-        $promo = PromoCode::findApplicableAutomatic($durationType, $userId, $clientType);
+        $promo = PromoCode::findApplicableAutomatic($durationType, $context['userId'], $context['clientType']);
 
         if (!$promo) {
             Response::success([
@@ -137,19 +140,12 @@ class PublicPromoCodeController
             return;
         }
 
-        // Calculer la remise
         $originalPrice = Session::getPriceForType($durationType);
         $discount = PromoCode::calculateDiscount($promo, $originalPrice);
 
         Response::success([
             'has_automatic_promo' => true,
-            'promo' => [
-                'id' => $promo['id'],
-                'name' => $promo['name'],
-                'discount_type' => $promo['discount_type'],
-                'discount_value' => $promo['discount_value'],
-                'discount_label' => PromoCode::getDiscountLabel($promo)
-            ],
+            'promo' => $this->formatPromoResponse($promo, false),
             'pricing' => $discount
         ]);
     }

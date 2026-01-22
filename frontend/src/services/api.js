@@ -222,5 +222,6 @@ export const promoCodesApi = {
   create: (data) => api.post('/promo-codes', data),
   update: (id, data) => api.put(`/promo-codes/${id}`, data),
   delete: (id) => api.delete(`/promo-codes/${id}`),
-  generateCode: (length = 8) => api.get('/promo-codes/generate-code', { params: { length } })
+  generateCode: (length = 8) => api.get('/promo-codes/generate-code', { params: { length } }),
+  getAvailable: (params) => api.get('/promo-codes/available', { params })
 }

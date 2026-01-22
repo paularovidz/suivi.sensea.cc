@@ -200,6 +200,7 @@ $routes = [
     // ============================================
     'GET /promo-codes' => ['controller' => PromoCodeController::class, 'method' => 'index'],
     'GET /promo-codes/generate-code' => ['controller' => PromoCodeController::class, 'method' => 'generateCode'],
+    'GET /promo-codes/available' => ['controller' => PromoCodeController::class, 'method' => 'getAvailable'],
     'GET /promo-codes/([a-f0-9-]+)' => ['controller' => PromoCodeController::class, 'method' => 'show'],
     'GET /promo-codes/([a-f0-9-]+)/usages' => ['controller' => PromoCodeController::class, 'method' => 'getUsages'],
     'POST /promo-codes' => ['controller' => PromoCodeController::class, 'method' => 'store'],

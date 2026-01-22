@@ -131,11 +131,16 @@ class Session
                    client.last_name as client_last_name,
                    client.client_type,
                    client.company_name,
-                   client.siret
+                   client.siret,
+                   pc.code as promo_code,
+                   pc.name as promo_code_name,
+                   pc.discount_type as promo_discount_type,
+                   pc.discount_value as promo_discount_value
             FROM sessions s
             INNER JOIN persons p ON s.person_id = p.id
             LEFT JOIN users u ON s.created_by = u.id
             LEFT JOIN users client ON s.user_id = client.id
+            LEFT JOIN promo_codes pc ON s.promo_code_id = pc.id
             WHERE s.id = :id
         ');
         $stmt->execute(['id' => $id]);
@@ -144,6 +149,21 @@ class Session
         if ($session) {
             $session = self::decryptFields($session);
             $session['proposals'] = self::getProposals($id);
+
+            // Format promo code info
+            if (!empty($session['promo_code_id'])) {
+                $session['promo_code'] = [
+                    'id' => $session['promo_code_id'],
+                    'code' => $session['promo_code'],
+                    'name' => $session['promo_code_name'],
+                    'discount_type' => $session['promo_discount_type'],
+                    'discount_value' => $session['promo_discount_value'],
+                    'discount_label' => \App\Models\PromoCode::getDiscountLabel([
+                        'discount_type' => $session['promo_discount_type'],
+                        'discount_value' => $session['promo_discount_value']
+                    ])
+                ];
+            }
         }
 
         return $session ?: null;

@@ -10,8 +10,10 @@ use App\Models\SensoryProposal;
 use App\Models\User;
 use App\Models\LoyaltyCard;
 use App\Models\Setting;
+use App\Models\PromoCode;
 use App\Middleware\AuthMiddleware;
 use App\Services\AuditService;
+use App\Services\MailService;
 use App\Utils\Response;
 use App\Utils\Validator;
 
@@ -149,6 +151,17 @@ class SessionController
 
         $data['created_by'] = $currentUser['id'];
 
+        // Gérer le code promo si fourni
+        $promoCodeId = $data['promo_code_id'] ?? null;
+        $appliedPromo = null;
+        $originalPrice = isset($data['original_price']) ? (float)$data['original_price'] : null;
+        $discountAmount = isset($data['discount_amount']) ? (float)$data['discount_amount'] : 0;
+        $finalPrice = isset($data['price']) ? (float)$data['price'] : null;
+
+        if ($promoCodeId) {
+            $appliedPromo = PromoCode::findById($promoCodeId);
+        }
+
         // Vérifier la carte de fidélité des utilisateurs assignés à cette personne
         $loyaltyWarning = null;
         $assignedUsers = Person::getAssignedUsers($data['person_id']);
@@ -172,8 +185,24 @@ class SessionController
         $sessionId = Session::create($data);
         $session = Session::findById($sessionId);
 
+        // Enregistrer l'utilisation du code promo
+        if ($promoCodeId && $appliedPromo && $originalPrice !== null) {
+            PromoCode::recordUsage(
+                $promoCodeId,
+                $sessionId,
+                $originalPrice,
+                $discountAmount,
+                $finalPrice ?? ($originalPrice - $discountAmount),
+                $data['user_id'] ?? null,
+                null // pas d'IP pour les sessions créées en BO
+            );
+        }
+
         // Mettre à jour la carte de fidélité si ce n'est pas une séance gratuite
-        $isFreeSession = $data['is_free_session'] ?? false;
+        // Une séance est gratuite si is_free_session=true OU si le code promo est de type free_session
+        $isFreeSession = ($data['is_free_session'] ?? false) ||
+                         ($promoCodeId && PromoCode::isFreeSession($promoCodeId));
+        $loyaltyPromoGenerated = null;
 
         foreach ($assignedUsers as $assignedUser) {
             if (User::isPersonalClient($assignedUser['id'])) {
@@ -182,7 +211,30 @@ class SessionController
                     LoyaltyCard::markFreeSessionUsed($assignedUser['id']);
                 } else {
                     // Incrémenter le compteur de séances
-                    LoyaltyCard::incrementSessions($assignedUser['id'], $sessionsRequired);
+                    $loyaltyResult = LoyaltyCard::incrementSessions($assignedUser['id'], $sessionsRequired);
+
+                    // Si la carte vient d'être complétée, générer un code promo
+                    if ($loyaltyResult['just_completed']) {
+                        $userName = $assignedUser['first_name'] . ' ' . $assignedUser['last_name'];
+                        $promoData = PromoCode::generateLoyaltyCode($assignedUser['id'], $userName);
+
+                        // Envoyer l'email avec le code promo
+                        if (!empty($assignedUser['email'])) {
+                            $mailService = new MailService();
+                            $mailService->sendLoyaltyPromoCode(
+                                $assignedUser['email'],
+                                $assignedUser['first_name'],
+                                $promoData['code']
+                            );
+                        }
+
+                        $loyaltyPromoGenerated = [
+                            'user_id' => $assignedUser['id'],
+                            'user_name' => $userName,
+                            'promo_code' => $promoData['code'],
+                            'message' => "Code promo fidélité généré et envoyé par email : {$promoData['code']}"
+                        ];
+                    }
                 }
             }
         }
@@ -200,6 +252,9 @@ class SessionController
         $response = $session;
         if ($loyaltyWarning) {
             $response['loyalty_warning'] = $loyaltyWarning;
+        }
+        if ($loyaltyPromoGenerated) {
+            $response['loyalty_promo_generated'] = $loyaltyPromoGenerated;
         }
 
         Response::success($response, 'Séance créée avec succès', 201);
@@ -287,8 +342,49 @@ class SessionController
         // Don't allow changing person_id
         unset($data['person_id'], $data['created_by']);
 
+        // Gérer le code promo si modifié
+        // Note: utiliser array_key_exists car isset() retourne false pour null
+        $newPromoCodeId = array_key_exists('promo_code_id', $data) ? $data['promo_code_id'] : $session['promo_code_id'];
+        $oldPromoCodeId = $session['promo_code_id'] ?? null;
+        $promoCodeChanged = array_key_exists('promo_code_id', $data) && $newPromoCodeId !== $oldPromoCodeId;
+
         Session::update($id, $data);
         $updatedSession = Session::findById($id);
+
+        // Si le code promo a changé, gérer les usages
+        if ($promoCodeChanged) {
+            // Supprimer l'ancienne utilisation si elle existait
+            if ($oldPromoCodeId) {
+                PromoCode::deleteUsageBySession($id);
+            }
+
+            // Enregistrer la nouvelle utilisation si un nouveau code est appliqué
+            if ($newPromoCodeId) {
+                $appliedPromo = PromoCode::findById($newPromoCodeId);
+                $originalPrice = isset($data['original_price']) ? (float)$data['original_price'] : null;
+                $discountAmount = isset($data['discount_amount']) ? (float)$data['discount_amount'] : 0;
+                $finalPrice = isset($data['price']) ? (float)$data['price'] : null;
+
+                if ($appliedPromo && $originalPrice !== null) {
+                    PromoCode::recordUsage(
+                        $newPromoCodeId,
+                        $id,
+                        $originalPrice,
+                        $discountAmount,
+                        $finalPrice ?? ($originalPrice - $discountAmount),
+                        $session['user_id'] ?? null,
+                        null
+                    );
+                }
+            } else {
+                // Code promo retiré : effacer les champs de remise
+                Session::update($id, [
+                    'original_price' => null,
+                    'discount_amount' => null
+                ]);
+                $updatedSession = Session::findById($id);
+            }
+        }
 
         AuditService::log(
             $currentUser['id'],

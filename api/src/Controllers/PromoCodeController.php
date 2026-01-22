@@ -338,4 +338,41 @@ class PromoCodeController
 
         Response::success(['code' => $code]);
     }
+
+    /**
+     * GET /promo-codes/available
+     * Liste les codes promo disponibles pour un utilisateur
+     * Paramètres optionnels: user_id, client_type, duration_type, exclude_session_id
+     */
+    public function getAvailable(): void
+    {
+        AuthMiddleware::requireAdmin();
+
+        $userId = isset($_GET['user_id']) && $_GET['user_id'] !== '' ? $_GET['user_id'] : null;
+        $clientType = isset($_GET['client_type']) && $_GET['client_type'] !== '' ? $_GET['client_type'] : null;
+        $durationType = isset($_GET['duration_type']) && $_GET['duration_type'] !== '' ? $_GET['duration_type'] : null;
+        $excludeSessionId = isset($_GET['exclude_session_id']) && $_GET['exclude_session_id'] !== '' ? $_GET['exclude_session_id'] : null;
+
+        // Valider user_id si fourni
+        if ($userId !== null) {
+            $user = User::findById($userId);
+            if (!$user) {
+                Response::notFound('Utilisateur non trouvé');
+            }
+            // Récupérer le client_type de l'utilisateur si non fourni
+            if ($clientType === null) {
+                $clientType = $user['client_type'];
+            }
+        }
+
+        $promoCodes = PromoCode::getAvailableForUser($userId, $clientType, $durationType, $excludeSessionId);
+
+        Response::success([
+            'promo_codes' => $promoCodes,
+            'labels' => [
+                'discount_types' => PromoCode::DISCOUNT_TYPE_LABELS,
+                'application_modes' => PromoCode::APPLICATION_MODE_LABELS
+            ]
+        ]);
+    }
 }
