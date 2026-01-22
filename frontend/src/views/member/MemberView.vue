@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { usePersonsStore } from '@/stores/persons'
 import { useAuthStore } from '@/stores/auth'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
@@ -13,12 +13,20 @@ import ProfileEditModal from '@/components/member/ProfileEditModal.vue'
 import PersonCreateModal from '@/components/member/PersonCreateModal.vue'
 
 const router = useRouter()
+const route = useRoute()
 const personsStore = usePersonsStore()
 const authStore = useAuthStore()
 
 const loading = ref(true)
 const showProfileModal = ref(false)
 const showPersonModal = ref(false)
+
+// Check for editProfile query parameter
+if (route.query.editProfile === 'true') {
+  showProfileModal.value = true
+  // Clean up the URL
+  router.replace({ query: {} })
+}
 
 const persons = computed(() => personsStore.persons)
 

@@ -9,7 +9,7 @@
 
       <!-- Masked client info display -->
       <div class="space-y-4 mb-6">
-        <!-- Email (masked) -->
+        <!-- Email -->
         <div class="p-4 bg-gray-700/30 border border-gray-600/50 rounded-lg">
           <div class="flex items-center justify-between">
             <div class="flex items-center">
@@ -18,7 +18,7 @@
               </svg>
               <div>
                 <p class="text-sm text-gray-400">Adresse email</p>
-                <p class="text-white font-medium">{{ bookingStore.existingClientInfo.email_masked }}</p>
+                <p class="text-white font-medium">{{ displayEmail }}</p>
               </div>
             </div>
             <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -27,16 +27,16 @@
           </div>
         </div>
 
-        <!-- Phone (masked or input) -->
+        <!-- Phone (full/masked or input) -->
         <div class="p-4 bg-gray-700/30 border border-gray-600/50 rounded-lg">
-          <div v-if="bookingStore.existingClientInfo.has_phone" class="flex items-center justify-between">
+          <div v-if="userHasPhone" class="flex items-center justify-between">
             <div class="flex items-center">
               <svg class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
               <div>
                 <p class="text-sm text-gray-400">Téléphone</p>
-                <p class="text-white font-medium">Se terminant par {{ bookingStore.existingClientInfo.phone_masked }}</p>
+                <p class="text-white font-medium">{{ displayPhone }}</p>
               </div>
             </div>
             <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -85,11 +85,26 @@
           </svg>
           <div>
             <p class="text-sm text-gray-300">Vos informations ne sont pas à jour ?</p>
-            <p class="text-sm text-gray-400 mt-1">
+            <!-- Compte désactivé : afficher contact -->
+            <p v-if="isClientDeactivated" class="text-sm text-gray-400 mt-1">
               Contactez-nous par email à
               <a href="mailto:bonjour@sensea.cc" class="text-indigo-400 hover:text-indigo-300">bonjour@sensea.cc</a>
               ou par téléphone au
               <a href="tel:+33600000000" class="text-indigo-400 hover:text-indigo-300">06 00 00 00 00</a>.
+            </p>
+            <!-- Connecté : modifier directement -->
+            <p v-else-if="authStore.isAuthenticated" class="text-sm text-gray-400 mt-1">
+              <a href="/app/member?editProfile=true" class="text-indigo-400 hover:text-indigo-300 underline">
+                Modifiez vos informations personnelles
+              </a>
+              depuis votre espace membre.
+            </p>
+            <!-- Non connecté : proposer de se connecter -->
+            <p v-else class="text-sm text-gray-400 mt-1">
+              <a href="/login" class="text-indigo-400 hover:text-indigo-300 underline">
+                Connectez-vous à votre espace membre
+              </a>
+              pour modifier vos informations personnelles.
             </p>
           </div>
         </div>
@@ -310,6 +325,7 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useBookingStore } from '@/stores/booking'
+import { useAuthStore } from '@/stores/auth'
 import PhoneInput from '@/components/ui/PhoneInput.vue'
 
 const props = defineProps({
@@ -326,6 +342,38 @@ const props = defineProps({
 const emit = defineEmits(['update:gdprError', 'update:cgrError'])
 
 const bookingStore = useBookingStore()
+const authStore = useAuthStore()
+
+// Check if client account is deactivated
+const isClientDeactivated = computed(() => {
+  return bookingStore.existingClientInfo?.is_active === false
+})
+
+// Display email: full if authenticated, masked otherwise
+const displayEmail = computed(() => {
+  if (authStore.isAuthenticated && authStore.user?.email) {
+    return authStore.user.email
+  }
+  return bookingStore.existingClientInfo?.email_masked
+})
+
+// Display phone: full if authenticated, masked otherwise
+const displayPhone = computed(() => {
+  if (authStore.isAuthenticated && authStore.user?.phone) {
+    return authStore.user.phone
+  }
+  return bookingStore.existingClientInfo?.phone_masked
+    ? `Se terminant par ${bookingStore.existingClientInfo.phone_masked}`
+    : null
+})
+
+// Check if user has phone (from auth or existing client info)
+const userHasPhone = computed(() => {
+  if (authStore.isAuthenticated) {
+    return !!authStore.user?.phone
+  }
+  return bookingStore.existingClientInfo?.has_phone
+})
 
 // Reset error when consent is given
 watch(() => bookingStore.gdprConsent, (newValue) => {

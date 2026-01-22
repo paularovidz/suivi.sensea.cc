@@ -304,7 +304,8 @@ class PublicBookingController
                 'client_type' => $user['client_type'] ?? User::CLIENT_TYPE_PERSONAL,
                 'client_type_label' => User::CLIENT_TYPE_LABELS[$user['client_type'] ?? User::CLIENT_TYPE_PERSONAL] ?? 'Particulier',
                 'company_name' => $user['company_name'] ?? null,
-                'has_company' => !empty($user['company_name'])
+                'has_company' => !empty($user['company_name']),
+                'is_active' => (bool) ($user['is_active'] ?? true)
             ]
         ]);
     }
