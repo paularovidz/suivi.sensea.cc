@@ -19,7 +19,7 @@
 
       <!-- Step content -->
       <div class="card-dark shadow-lg overflow-hidden">
-        <ClientTypeStep v-if="bookingStore.currentStep === 1" />
+        <ClientTypeStep v-if="bookingStore.currentStep === 1" @selected="handleClientTypeSelected" />
         <PersonSelectionStep v-else-if="bookingStore.currentStep === 2" />
         <DateTimeStep v-else-if="bookingStore.currentStep === 3" />
         <ContactInfoStep v-else-if="bookingStore.currentStep === 4" v-model:gdpr-error="gdprError" v-model:cgr-error="cgrError" />
@@ -41,7 +41,7 @@
         <div v-else></div>
 
         <div
-          v-if="bookingStore.currentStep < 5 && bookingStore.currentStep !== 3"
+          v-if="bookingStore.currentStep > 1 && bookingStore.currentStep < 5 && (bookingStore.currentStep !== 3 || cameBackFromConfirmation)"
           class="relative"
         >
           <button
@@ -97,6 +97,7 @@ const toastStore = useToastStore()
 const initializing = ref(true)
 const gdprError = ref(false)
 const cgrError = ref(false)
+const cameBackFromConfirmation = ref(false)
 
 // Afficher le bouton retour sauf à l'étape 1, à l'étape 5, et à l'étape 2 pour les utilisateurs connectés
 const showBackButton = computed(() => {
@@ -180,9 +181,15 @@ function maskEmail(email) {
   return `${local.slice(0, 2)}***@${domain}`
 }
 
+function handleClientTypeSelected() {
+  // Auto-advance to step 2 when client type is selected
+  bookingStore.nextStep()
+}
+
 async function handleNewBooking() {
   // Reset le wizard
   bookingStore.resetWizard()
+  cameBackFromConfirmation.value = false
 
   // Si l'utilisateur est connecté, réinitialiser pour lui
   if (authStore.isAuthenticated && authStore.user) {
@@ -195,10 +202,21 @@ function handlePrev() {
   if (authStore.isAuthenticated && bookingStore.currentStep === 2) {
     return
   }
+
+  // Track if coming back from step 4 to show continue button on step 3
+  if (bookingStore.currentStep === 4) {
+    cameBackFromConfirmation.value = true
+  }
+
   bookingStore.prevStep()
 }
 
 async function handleNext() {
+  // Reset the flag when advancing from step 3
+  if (bookingStore.currentStep === 3) {
+    cameBackFromConfirmation.value = false
+  }
+
   if (bookingStore.currentStep === 4) {
     // Submit booking
     try {

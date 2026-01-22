@@ -87,6 +87,8 @@
 <script setup>
 import { useBookingStore } from '@/stores/booking'
 
+const emit = defineEmits(['selected'])
+
 const bookingStore = useBookingStore()
 
 function selectType(isNew) {
@@ -107,5 +109,8 @@ function selectType(isNew) {
   } else {
     bookingStore.setDurationType('regular')
   }
+
+  // Emit event to auto-advance
+  emit('selected')
 }
 </script>
