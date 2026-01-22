@@ -28,9 +28,11 @@ use App\Controllers\SessionController;
 use App\Controllers\SensoryProposalController;
 use App\Controllers\StatsController;
 use App\Controllers\PublicBookingController;
+use App\Controllers\PublicPromoCodeController;
 use App\Controllers\BookingController;
 use App\Controllers\SettingsController;
 use App\Controllers\DocumentController;
+use App\Controllers\PromoCodeController;
 use App\Utils\Response;
 
 // Error handling
@@ -163,6 +165,13 @@ $routes = [
     'GET /public/bookings/([a-f0-9]+)/ics' => ['controller' => PublicBookingController::class, 'method' => 'downloadICS'],
 
     // ============================================
+    // PUBLIC PROMO CODE ROUTES (No authentication)
+    // ============================================
+    'POST /public/promo-codes/validate' => ['controller' => PublicPromoCodeController::class, 'method' => 'validate', 'rateLimit' => 'strict'],
+    'GET /public/promo-codes/has-manual-codes' => ['controller' => PublicPromoCodeController::class, 'method' => 'hasManualCodes'],
+    'GET /public/promo-codes/automatic' => ['controller' => PublicPromoCodeController::class, 'method' => 'getAutomatic'],
+
+    // ============================================
     // ADMIN BOOKING ROUTES (Authentication required)
     // ============================================
     'GET /bookings' => ['controller' => BookingController::class, 'method' => 'index'],
@@ -185,6 +194,18 @@ $routes = [
     'GET /documents/([a-f0-9-]+)/download' => ['controller' => DocumentController::class, 'method' => 'download'],
     'GET /documents/([a-f0-9-]+)/view' => ['controller' => DocumentController::class, 'method' => 'view'],
     'DELETE /documents/([a-f0-9-]+)' => ['controller' => DocumentController::class, 'method' => 'destroy'],
+
+    // ============================================
+    // PROMO CODES ROUTES (Admin only)
+    // ============================================
+    'GET /promo-codes' => ['controller' => PromoCodeController::class, 'method' => 'index'],
+    'GET /promo-codes/generate-code' => ['controller' => PromoCodeController::class, 'method' => 'generateCode'],
+    'GET /promo-codes/([a-f0-9-]+)' => ['controller' => PromoCodeController::class, 'method' => 'show'],
+    'GET /promo-codes/([a-f0-9-]+)/usages' => ['controller' => PromoCodeController::class, 'method' => 'getUsages'],
+    'POST /promo-codes' => ['controller' => PromoCodeController::class, 'method' => 'store'],
+    'PUT /promo-codes/([a-f0-9-]+)' => ['controller' => PromoCodeController::class, 'method' => 'update'],
+    'PATCH /promo-codes/([a-f0-9-]+)' => ['controller' => PromoCodeController::class, 'method' => 'update'],
+    'DELETE /promo-codes/([a-f0-9-]+)' => ['controller' => PromoCodeController::class, 'method' => 'destroy'],
 
     // Health check
     'GET /' => ['handler' => fn() => Response::success(['status' => 'ok', 'version' => '1.0.0'], 'API Snoezelen')],

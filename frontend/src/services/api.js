@@ -152,6 +152,28 @@ export const publicBookingApi = {
   downloadICS: (token) => api.get(`/public/bookings/${token}/ics`, { responseType: 'blob' })
 }
 
+// ============================================
+// PUBLIC PROMO CODES API (No auth required)
+// ============================================
+export const publicPromoCodesApi = {
+  validate: (code, durationType, email = null, clientType = null) =>
+    api.post('/public/promo-codes/validate', {
+      code,
+      duration_type: durationType,
+      email,
+      client_type: clientType
+    }),
+  hasManualCodes: () => api.get('/public/promo-codes/has-manual-codes'),
+  getAutomatic: (durationType, email = null, clientType = null) =>
+    api.get('/public/promo-codes/automatic', {
+      params: {
+        duration_type: durationType,
+        email,
+        client_type: clientType
+      }
+    })
+}
+
 // Bookings API (Admin - auth required)
 export const bookingsApi = {
   getAll: (params) => api.get('/bookings', { params }),
@@ -190,4 +212,15 @@ export const documentsApi = {
   view: (id) => api.get(`/documents/${id}/view`, { responseType: 'blob' }),
   getViewUrl: (id) => `${API_URL}/documents/${id}/view`,
   delete: (id) => api.delete(`/documents/${id}`)
+}
+
+// Promo Codes API (Admin - auth required)
+export const promoCodesApi = {
+  getAll: (params) => api.get('/promo-codes', { params }),
+  getById: (id) => api.get(`/promo-codes/${id}`),
+  getUsages: (id, params) => api.get(`/promo-codes/${id}/usages`, { params }),
+  create: (data) => api.post('/promo-codes', data),
+  update: (id, data) => api.put(`/promo-codes/${id}`, data),
+  delete: (id) => api.delete(`/promo-codes/${id}`),
+  generateCode: (length = 8) => api.get('/promo-codes/generate-code', { params: { length } })
 }

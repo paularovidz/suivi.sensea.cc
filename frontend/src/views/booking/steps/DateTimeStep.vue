@@ -18,8 +18,78 @@
           </div>
         </div>
         <div class="text-right">
-          <p class="text-2xl font-bold text-white">{{ bookingStore.currentPrice }} &euro;</p>
+          <!-- Prix avec promo -->
+          <template v-if="bookingStore.hasPromoApplied">
+            <p class="text-lg text-gray-400 line-through">{{ formatPrice(bookingStore.originalPrice) }} &euro;</p>
+            <p class="text-2xl font-bold text-green-400">{{ formatPrice(bookingStore.currentPrice) }} &euro;</p>
+          </template>
+          <template v-else>
+            <p class="text-2xl font-bold text-white">{{ formatPrice(bookingStore.currentPrice) }} &euro;</p>
+          </template>
           <p class="text-xs text-gray-400">par séance</p>
+        </div>
+      </div>
+
+      <!-- Promo code applied indicator -->
+      <div v-if="bookingStore.hasPromoApplied" class="mt-3 pt-3 border-t border-gray-600/50">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center text-green-400">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M5 2a2 2 0 00-2 2v14l3.5-2 3.5 2 3.5-2 3.5 2V4a2 2 0 00-2-2H5zm2.5 3a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm6.207.293a1 1 0 00-1.414 0l-6 6a1 1 0 101.414 1.414l6-6a1 1 0 000-1.414zM12.5 10a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" clip-rule="evenodd" />
+            </svg>
+            <span class="text-sm font-medium">
+              {{ bookingStore.appliedPromo.code || bookingStore.appliedPromo.name }}
+              <span class="text-green-300 ml-1">({{ bookingStore.appliedPromo.discount_label }})</span>
+            </span>
+          </div>
+          <button
+            @click="bookingStore.clearPromoCode()"
+            class="text-gray-400 hover:text-red-400 transition-colors text-sm"
+          >
+            Retirer
+          </button>
+        </div>
+        <p class="text-xs text-gray-400 mt-1">
+          Remise : {{ bookingStore.appliedPromo.discount_label }}
+          <span v-if="bookingStore.appliedPromo.discount_type !== 'percentage'">
+            ({{ formatPrice(bookingStore.promoPricing.discount_amount) }} &euro;)
+          </span>
+        </p>
+      </div>
+
+      <!-- Promo code input (only if manual codes exist and no promo applied) -->
+      <div v-else-if="bookingStore.hasManualPromoCodes" class="mt-3 pt-3 border-t border-gray-600/50">
+        <div v-if="!showPromoInput" class="text-center">
+          <button
+            @click="showPromoInput = true"
+            class="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            Vous avez un code promotionnel ?
+          </button>
+        </div>
+        <div v-else>
+          <label class="block text-sm text-gray-400 mb-2">Code promotionnel</label>
+          <div class="flex gap-2">
+            <input
+              v-model="promoCodeValue"
+              type="text"
+              placeholder="Entrez votre code"
+              class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm uppercase placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              :disabled="bookingStore.promoLoading"
+              @keyup.enter="applyPromoCode"
+            />
+            <button
+              @click="applyPromoCode"
+              :disabled="bookingStore.promoLoading || !promoCodeValue.trim()"
+              class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <span v-if="bookingStore.promoLoading">...</span>
+              <span v-else>Appliquer</span>
+            </button>
+          </div>
+          <p v-if="bookingStore.promoError" class="mt-2 text-sm text-red-400">
+            {{ bookingStore.promoError }}
+          </p>
         </div>
       </div>
     </div>
@@ -81,15 +151,30 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useBookingStore } from '@/stores/booking'
 import BookingCalendar from '@/components/booking/BookingCalendar.vue'
 import TimeSlotPicker from '@/components/booking/TimeSlotPicker.vue'
 
 const bookingStore = useBookingStore()
 
+function formatPrice(value) {
+  return Number(value).toFixed(2).replace('.', ',')
+}
+
 const loadingDates = ref(false)
 const loadingSlots = ref(false)
+const showPromoInput = ref(false)
+const promoCodeValue = ref('')
+
+// Réinitialiser l'input quand le code promo est retiré
+watch(() => bookingStore.hasPromoApplied, (hasPromo, wasApplied) => {
+  if (!hasPromo && wasApplied) {
+    // Le code promo a été retiré, réinitialiser et montrer l'input
+    promoCodeValue.value = ''
+    showPromoInput.value = true
+  }
+})
 
 const durationLabel = computed(() => {
   return bookingStore.durationType === 'discovery'
@@ -137,6 +222,14 @@ onMounted(async () => {
   }
 
   await fetchAvailableDates()
+
+  // Check if manual promo codes exist
+  await bookingStore.checkHasManualPromoCodes()
+
+  // Check for automatic promo (only if no promo already applied)
+  if (!bookingStore.hasPromoApplied) {
+    await bookingStore.checkAutomaticPromo()
+  }
 })
 
 async function fetchAvailableDates() {
@@ -172,5 +265,14 @@ function selectTime(time) {
   nextTick(() => {
     bookingStore.nextStep()
   })
+}
+
+async function applyPromoCode() {
+  if (!promoCodeValue.value.trim()) return
+
+  const success = await bookingStore.validatePromoCode(promoCodeValue.value)
+  if (success) {
+    showPromoInput.value = false
+  }
 }
 </script>

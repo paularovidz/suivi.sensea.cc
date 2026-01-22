@@ -55,6 +55,7 @@ const navigation = computed(() => {
 
   if (authStore.isAdmin) {
     items.push({ name: 'Utilisateurs', href: '/app/users', icon: 'users' })
+    items.push({ name: 'Codes promo', href: '/app/promo-codes', icon: 'tag' })
     items.push({ name: 'Paramètres', href: '/app/settings', icon: 'settings' })
   }
 

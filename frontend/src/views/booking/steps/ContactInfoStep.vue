@@ -9,32 +9,6 @@
 
       <!-- Masked client info display -->
       <div class="space-y-4 mb-6">
-        <!-- Client type badge -->
-        <div class="p-4 bg-gray-700/30 border border-gray-600/50 rounded-lg">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <svg v-if="bookingStore.existingClientInfo.client_type === 'professional'" class="w-5 h-5 text-amber-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <svg v-else class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <div>
-                <p class="text-sm text-gray-400">Type de client</p>
-                <p class="text-white font-medium">
-                  {{ bookingStore.existingClientInfo.client_type_label || 'Particulier' }}
-                  <span v-if="bookingStore.existingClientInfo.has_company" class="text-gray-400">
-                    - {{ bookingStore.existingClientInfo.company_name }}
-                  </span>
-                </p>
-              </div>
-            </div>
-            <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-            </svg>
-          </div>
-        </div>
-
         <!-- Email (masked) -->
         <div class="p-4 bg-gray-700/30 border border-gray-600/50 rounded-lg">
           <div class="flex items-center justify-between">
@@ -131,81 +105,6 @@
       </p>
 
       <div class="space-y-4">
-        <!-- Client Type selection -->
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-2">
-            Vous êtes <span class="text-red-400">*</span>
-          </label>
-          <div class="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              @click="bookingStore.clientInfo.clientType = 'personal'"
-              :class="[
-                'flex items-center justify-center px-4 py-3 border rounded-lg transition-all',
-                bookingStore.clientInfo.clientType === 'personal'
-                  ? 'border-indigo-500 bg-indigo-500/20 text-white'
-                  : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
-              ]"
-            >
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              Particulier
-            </button>
-            <button
-              type="button"
-              @click="bookingStore.clientInfo.clientType = 'professional'"
-              :class="[
-                'flex items-center justify-center px-4 py-3 border rounded-lg transition-all',
-                bookingStore.clientInfo.clientType === 'professional'
-                  ? 'border-indigo-500 bg-indigo-500/20 text-white'
-                  : 'border-gray-600 bg-gray-700/30 text-gray-400 hover:border-gray-500'
-              ]"
-            >
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              Professionnel
-            </button>
-          </div>
-        </div>
-
-        <!-- Professional fields (only shown if professional) -->
-        <template v-if="bookingStore.clientInfo.clientType === 'professional'">
-          <!-- Company name -->
-          <div>
-            <label for="client-company" class="block text-sm font-medium text-gray-300 mb-1">
-              Nom de l'entreprise / établissement
-            </label>
-            <input
-              id="client-company"
-              v-model="bookingStore.clientInfo.companyName"
-              type="text"
-              placeholder="Nom de votre structure"
-              class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-
-          <!-- SIRET -->
-          <div>
-            <label for="client-siret" class="block text-sm font-medium text-gray-300 mb-1">
-              SIRET
-              <span class="text-gray-500 font-normal">(optionnel)</span>
-            </label>
-            <input
-              id="client-siret"
-              v-model="bookingStore.clientInfo.siret"
-              type="text"
-              placeholder="123 456 789 00012"
-              maxlength="17"
-              class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-            <p class="mt-1 text-xs text-gray-500">
-              14 chiffres pour la facturation professionnelle
-            </p>
-          </div>
-        </template>
-
         <!-- First name -->
         <div>
           <label for="client-firstname" class="block text-sm font-medium text-gray-300 mb-1">
@@ -308,12 +207,40 @@
             {{ formattedDateTime }}
           </dd>
         </div>
-        <div class="flex justify-between pt-2 border-t border-gray-600/50">
-          <dt class="text-gray-400 font-medium">Tarif :</dt>
-          <dd class="font-bold text-white">
-            {{ bookingStore.currentPrice }} &euro;
-          </dd>
-        </div>
+        <!-- Promo code display -->
+        <template v-if="bookingStore.hasPromoApplied">
+          <div class="flex justify-between pt-2 border-t border-gray-600/50">
+            <dt class="text-gray-500">Prix initial :</dt>
+            <dd class="text-gray-400 line-through">
+              {{ formatPrice(bookingStore.originalPrice) }} &euro;
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-green-400 flex items-center">
+              <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5 2a2 2 0 00-2 2v14l3.5-2 3.5 2 3.5-2 3.5 2V4a2 2 0 00-2-2H5zm2.5 3a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm6.207.293a1 1 0 00-1.414 0l-6 6a1 1 0 101.414 1.414l6-6a1 1 0 000-1.414zM12.5 10a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" clip-rule="evenodd" />
+              </svg>
+              {{ bookingStore.appliedPromo.code || bookingStore.appliedPromo.name }} :
+            </dt>
+            <dd class="text-green-400">
+              {{ bookingStore.appliedPromo.discount_label }}
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-400 font-medium">Total :</dt>
+            <dd class="font-bold text-green-400 text-lg">
+              {{ formatPrice(bookingStore.currentPrice) }} &euro;
+            </dd>
+          </div>
+        </template>
+        <template v-else>
+          <div class="flex justify-between pt-2 border-t border-gray-600/50">
+            <dt class="text-gray-400 font-medium">Tarif :</dt>
+            <dd class="font-bold text-white">
+              {{ formatPrice(bookingStore.currentPrice) }} &euro;
+            </dd>
+          </div>
+        </template>
       </dl>
     </div>
   </div>
@@ -325,6 +252,10 @@ import { useBookingStore } from '@/stores/booking'
 import PhoneInput from '@/components/ui/PhoneInput.vue'
 
 const bookingStore = useBookingStore()
+
+function formatPrice(value) {
+  return Number(value).toFixed(2).replace('.', ',')
+}
 
 // Check if this is an existing client (has existing client info)
 const isExistingClient = computed(() => {

@@ -37,6 +37,11 @@ import UserFormView from '@/views/users/UserFormView.vue'
 // Settings Views
 import SettingsView from '@/views/settings/SettingsView.vue'
 
+// Promo Codes Views
+import PromoCodesListView from '@/views/promo-codes/PromoCodesListView.vue'
+import PromoCodeFormView from '@/views/promo-codes/PromoCodeFormView.vue'
+import PromoCodeDetailView from '@/views/promo-codes/PromoCodeDetailView.vue'
+
 // Agenda View
 import AgendaView from '@/views/agenda/AgendaView.vue'
 
@@ -192,6 +197,28 @@ const routes = [
         path: 'agenda',
         name: 'agenda',
         component: AgendaView
+      },
+
+      // Promo Codes
+      {
+        path: 'promo-codes',
+        name: 'promo-codes',
+        component: PromoCodesListView
+      },
+      {
+        path: 'promo-codes/new',
+        name: 'promo-code-create',
+        component: PromoCodeFormView
+      },
+      {
+        path: 'promo-codes/:id',
+        name: 'promo-code-detail',
+        component: PromoCodeDetailView
+      },
+      {
+        path: 'promo-codes/:id/edit',
+        name: 'promo-code-edit',
+        component: PromoCodeFormView
       }
     ]
   },

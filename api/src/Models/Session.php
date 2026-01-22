@@ -525,13 +525,15 @@ class Session
                 duration_minutes, duration_type, duration_blocked_minutes,
                 price, status, confirmation_token,
                 gdpr_consent, gdpr_consent_at,
-                ip_address, user_agent
+                ip_address, user_agent,
+                promo_code_id, original_price, discount_amount
             ) VALUES (
                 :id, :user_id, :person_id, :created_by, :session_date,
                 :duration_minutes, :duration_type, :duration_blocked_minutes,
                 :price, :status, :confirmation_token,
                 :gdpr_consent, :gdpr_consent_at,
-                :ip_address, :user_agent
+                :ip_address, :user_agent,
+                :promo_code_id, :original_price, :discount_amount
             )
         ');
 
@@ -550,7 +552,10 @@ class Session
             'gdpr_consent' => $data['gdpr_consent'] ? 1 : 0,
             'gdpr_consent_at' => $data['gdpr_consent'] ? (new \DateTime())->format('Y-m-d H:i:s') : null,
             'ip_address' => $data['ip_address'] ?? null,
-            'user_agent' => $data['user_agent'] ?? null
+            'user_agent' => $data['user_agent'] ?? null,
+            'promo_code_id' => $data['promo_code_id'] ?? null,
+            'original_price' => $data['original_price'] ?? null,
+            'discount_amount' => $data['discount_amount'] ?? null
         ]);
 
         return $id;
@@ -658,7 +663,8 @@ class Session
             'position', 'communication', 'session_end', 'behavior_end', 'wants_to_return',
             'professional_notes', 'person_expression', 'next_session_proposals',
             'is_invoiced', 'is_paid', 'is_free_session',
-            'reminder_sms_sent_at', 'reminder_email_sent_at'
+            'reminder_sms_sent_at', 'reminder_email_sent_at',
+            'promo_code_id', 'original_price', 'discount_amount'
         ];
 
         foreach ($allowedFields as $field) {

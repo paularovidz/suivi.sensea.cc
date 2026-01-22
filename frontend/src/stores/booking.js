@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { publicBookingApi } from '@/services/api'
+import { publicBookingApi, publicPromoCodesApi } from '@/services/api'
 
 export const useBookingStore = defineStore('booking', () => {
   // ========================================
@@ -55,6 +55,14 @@ export const useBookingStore = defineStore('booking', () => {
   const durationLabels = ref({})
   const prices = ref({ discovery: 55, regular: 45 }) // default prices
   const emailConfirmationRequired = ref(false)
+
+  // Promo codes
+  const hasManualPromoCodes = ref(false)
+  const promoCodeInput = ref('')
+  const appliedPromo = ref(null) // { id, code, name, discount_type, discount_value, discount_label }
+  const promoPricing = ref(null) // { original_price, discount_amount, final_price }
+  const promoError = ref(null)
+  const promoLoading = ref(false)
 
   // Loading states
   const loading = ref(false)
@@ -135,6 +143,15 @@ export const useBookingStore = defineStore('booking', () => {
       data.captcha_token = captchaToken.value
     }
 
+    // Add promo code if applied
+    if (appliedPromo.value) {
+      if (appliedPromo.value.code) {
+        data.promo_code = appliedPromo.value.code
+      } else {
+        data.promo_code_id = appliedPromo.value.id
+      }
+    }
+
     return data
   })
 
@@ -170,7 +187,19 @@ export const useBookingStore = defineStore('booking', () => {
   })
 
   const currentPrice = computed(() => {
+    // If promo is applied, return the final price
+    if (promoPricing.value) {
+      return promoPricing.value.final_price
+    }
     return prices.value[durationType.value] || (durationType.value === 'discovery' ? 55 : 45)
+  })
+
+  const originalPrice = computed(() => {
+    return prices.value[durationType.value] || (durationType.value === 'discovery' ? 55 : 45)
+  })
+
+  const hasPromoApplied = computed(() => {
+    return appliedPromo.value !== null && promoPricing.value !== null
   })
 
   // ========================================
@@ -187,6 +216,85 @@ export const useBookingStore = defineStore('booking', () => {
     } catch (err) {
       console.error('Failed to fetch schedule:', err)
     }
+  }
+
+  // ========================================
+  // PROMO CODE ACTIONS
+  // ========================================
+
+  async function checkHasManualPromoCodes() {
+    try {
+      const response = await publicPromoCodesApi.hasManualCodes()
+      hasManualPromoCodes.value = response.data.data.has_manual_codes
+    } catch (err) {
+      console.error('Failed to check manual promo codes:', err)
+      hasManualPromoCodes.value = false
+    }
+  }
+
+  async function validatePromoCode(code) {
+    if (!code || !code.trim()) {
+      promoError.value = 'Veuillez entrer un code'
+      return false
+    }
+
+    promoLoading.value = true
+    promoError.value = null
+
+    try {
+      const response = await publicPromoCodesApi.validate(
+        code.trim(),
+        durationType.value,
+        clientInfo.value.email?.trim() || null,
+        clientInfo.value.clientType || 'personal'
+      )
+
+      const data = response.data.data
+      appliedPromo.value = data.promo
+      promoPricing.value = data.pricing
+      promoCodeInput.value = code.trim().toUpperCase()
+
+      return true
+    } catch (err) {
+      promoError.value = err.response?.data?.message || 'Code promo invalide'
+      appliedPromo.value = null
+      promoPricing.value = null
+      return false
+    } finally {
+      promoLoading.value = false
+    }
+  }
+
+  async function checkAutomaticPromo() {
+    promoLoading.value = true
+
+    try {
+      const response = await publicPromoCodesApi.getAutomatic(
+        durationType.value,
+        clientInfo.value.email?.trim() || null,
+        clientInfo.value.clientType || 'personal'
+      )
+
+      const data = response.data.data
+      if (data.has_automatic_promo) {
+        appliedPromo.value = data.promo
+        promoPricing.value = data.pricing
+        return true
+      }
+    } catch (err) {
+      console.error('Failed to check automatic promo:', err)
+    } finally {
+      promoLoading.value = false
+    }
+
+    return false
+  }
+
+  function clearPromoCode() {
+    promoCodeInput.value = ''
+    appliedPromo.value = null
+    promoPricing.value = null
+    promoError.value = null
   }
 
   async function checkEmail(email) {
@@ -427,6 +535,11 @@ export const useBookingStore = defineStore('booking', () => {
     existingClientInfo.value = null
     bookingResult.value = null
     error.value = null
+    // Reset promo state
+    promoCodeInput.value = ''
+    appliedPromo.value = null
+    promoPricing.value = null
+    promoError.value = null
     clearStorage()
   }
 
@@ -444,6 +557,8 @@ export const useBookingStore = defineStore('booking', () => {
       selectedTime.value = null
       availableDates.value = []
       availableSlots.value = []
+      // Clear promo as it might be specific to duration type
+      clearPromoCode()
     }
   }
 
@@ -501,9 +616,19 @@ export const useBookingStore = defineStore('booking', () => {
     durationLabels,
     prices,
     currentPrice,
+    originalPrice,
     emailConfirmationRequired,
     loading,
     error,
+
+    // Promo state
+    hasManualPromoCodes,
+    promoCodeInput,
+    appliedPromo,
+    promoPricing,
+    promoError,
+    promoLoading,
+    hasPromoApplied,
 
     // Getters
     canGoNext,
@@ -532,6 +657,12 @@ export const useBookingStore = defineStore('booking', () => {
     setCaptchaToken,
     resetDateTimeSelection,
     resetContactInfo,
-    resetFollowingSteps
+    resetFollowingSteps,
+
+    // Promo actions
+    checkHasManualPromoCodes,
+    validatePromoCode,
+    checkAutomaticPromo,
+    clearPromoCode
   }
 })

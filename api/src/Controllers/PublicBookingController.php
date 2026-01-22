@@ -8,6 +8,7 @@ use App\Models\Session;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Person;
+use App\Models\PromoCode;
 use App\Services\AvailabilityService;
 use App\Services\BookingMailService;
 use App\Services\CaptchaService;
@@ -491,7 +492,60 @@ class PublicBookingController
         }
 
         // Récupérer le prix de la séance
-        $price = Session::getPriceForType($data['duration_type']);
+        $originalPrice = Session::getPriceForType($data['duration_type']);
+        $price = $originalPrice;
+        $promoCodeId = null;
+        $discountAmount = null;
+        $appliedPromo = null;
+
+        // Gestion du code promo
+        if (!empty($data['promo_code']) || !empty($data['promo_code_id'])) {
+            // Valider le code promo
+            if (!empty($data['promo_code'])) {
+                $validation = PromoCode::validate(
+                    $data['promo_code'],
+                    $data['duration_type'],
+                    $userId,
+                    $clientType
+                );
+            } else {
+                // Promo automatique passée par ID
+                $promo = PromoCode::findById($data['promo_code_id']);
+                if ($promo) {
+                    $validation = PromoCode::validatePromo(
+                        $promo,
+                        $data['duration_type'],
+                        $userId,
+                        $clientType
+                    );
+                } else {
+                    $validation = ['valid' => false, 'error' => 'Code promo invalide'];
+                }
+            }
+
+            if ($validation['valid']) {
+                $appliedPromo = $validation['promo'];
+                $promoCodeId = $appliedPromo['id'];
+
+                // Calculer la remise
+                $discount = PromoCode::calculateDiscount($appliedPromo, $originalPrice);
+                $price = $discount['final_price'];
+                $discountAmount = $discount['discount_amount'];
+            }
+            // Si le code n'est pas valide, on continue sans remise (pas d'erreur)
+        } else {
+            // Vérifier s'il y a une promo automatique applicable
+            $autoPromo = PromoCode::findApplicableAutomatic($data['duration_type'], $userId, $clientType);
+            if ($autoPromo) {
+                $appliedPromo = $autoPromo;
+                $promoCodeId = $autoPromo['id'];
+
+                // Calculer la remise
+                $discount = PromoCode::calculateDiscount($autoPromo, $originalPrice);
+                $price = $discount['final_price'];
+                $discountAmount = $discount['discount_amount'];
+            }
+        }
 
         // Préparer les données de la réservation
         // Les infos client/personne sont récupérées via JOINs avec users/persons
@@ -503,7 +557,10 @@ class PublicBookingController
             'person_id' => $personId,
             'gdpr_consent' => true,
             'ip_address' => $clientIp,
-            'user_agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)
+            'user_agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
+            'promo_code_id' => $promoCodeId,
+            'original_price' => $promoCodeId ? $originalPrice : null,
+            'discount_amount' => $discountAmount
         ];
 
         // Vérifier si la validation email est requise
@@ -511,6 +568,20 @@ class PublicBookingController
 
         // Créer la réservation
         $sessionId = Session::createReservation($bookingData);
+
+        // Enregistrer l'utilisation du code promo
+        if ($promoCodeId && $appliedPromo) {
+            PromoCode::recordUsage(
+                $promoCodeId,
+                $sessionId,
+                $originalPrice,
+                $discountAmount,
+                $price,
+                $userId,
+                $clientIp
+            );
+        }
+
         $booking = Session::findById($sessionId);
 
         // Envoyer l'email de confirmation au client
@@ -538,10 +609,16 @@ class PublicBookingController
         $mailService->sendAdminNotification($booking, $icsContent);
 
         Response::success([
-            'id' => $bookingId,
+            'id' => $sessionId,
             'confirmation_token' => $booking['confirmation_token'],
             'requires_confirmation' => $emailConfirmationRequired,
-            'message' => $message
+            'message' => $message,
+            'promo_applied' => $promoCodeId !== null,
+            'pricing' => $promoCodeId ? [
+                'original_price' => $originalPrice,
+                'discount_amount' => $discountAmount,
+                'final_price' => $price
+            ] : null
         ], 'Réservation enregistrée', 201);
     }
 

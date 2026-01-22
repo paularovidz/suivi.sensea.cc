@@ -57,6 +57,41 @@
             {{ bookingStore.clientInfo.firstName }} {{ bookingStore.clientInfo.lastName }}
           </dd>
         </div>
+
+        <!-- Price with promo -->
+        <div v-if="bookingStore.hasPromoApplied" class="pt-3 border-t border-gray-600/50 space-y-1">
+          <div class="flex justify-between items-center">
+            <dt class="text-xs text-gray-500">Prix initial</dt>
+            <dd class="text-sm text-gray-400 line-through">
+              {{ formatPrice(bookingStore.originalPrice) }} &euro;
+            </dd>
+          </div>
+          <div class="flex justify-between items-center">
+            <dt class="text-xs text-green-400 flex items-center">
+              <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5 2a2 2 0 00-2 2v14l3.5-2 3.5 2 3.5-2 3.5 2V4a2 2 0 00-2-2H5zm2.5 3a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm6.207.293a1 1 0 00-1.414 0l-6 6a1 1 0 101.414 1.414l6-6a1 1 0 000-1.414zM12.5 10a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" clip-rule="evenodd" />
+              </svg>
+              {{ bookingStore.appliedPromo.code || bookingStore.appliedPromo.name }}
+            </dt>
+            <dd class="text-sm text-green-400">
+              {{ bookingStore.appliedPromo.discount_label }}
+            </dd>
+          </div>
+          <div class="flex justify-between items-center">
+            <dt class="text-xs text-gray-400 font-medium">Total</dt>
+            <dd class="text-lg font-bold text-green-400">
+              {{ formatPrice(bookingStore.currentPrice) }} &euro;
+            </dd>
+          </div>
+        </div>
+        <div v-else class="pt-3 border-t border-gray-600/50">
+          <div class="flex justify-between items-center">
+            <dt class="text-xs text-gray-500">Tarif</dt>
+            <dd class="text-lg font-bold text-white">
+              {{ formatPrice(bookingStore.currentPrice) }} &euro;
+            </dd>
+          </div>
+        </div>
       </dl>
     </div>
 
@@ -131,6 +166,10 @@ import { useBookingStore } from '@/stores/booking'
 
 const bookingStore = useBookingStore()
 const emit = defineEmits(['new-booking'])
+
+function formatPrice(value) {
+  return Number(value).toFixed(2).replace('.', ',')
+}
 
 const formattedDateTime = computed(() => {
   if (!bookingStore.selectedDate || !bookingStore.selectedTime) return '-'
