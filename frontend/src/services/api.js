@@ -21,6 +21,21 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
+// Token refresh state management to handle race conditions
+let isRefreshing = false
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
 // Response interceptor - handle token refresh
 api.interceptors.response.use(
   (response) => response,
@@ -29,7 +44,20 @@ api.interceptors.response.use(
 
     // If 401 and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // If already refreshing, queue this request
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`
+          return api(originalRequest)
+        }).catch(err => {
+          return Promise.reject(err)
+        })
+      }
+
       originalRequest._retry = true
+      isRefreshing = true
 
       const refreshToken = localStorage.getItem('refresh_token')
 
@@ -44,17 +72,26 @@ api.interceptors.response.use(
           localStorage.setItem('access_token', access_token)
           localStorage.setItem('refresh_token', refresh_token)
 
+          // Process queued requests with new token
+          processQueue(null, access_token)
+
           originalRequest.headers.Authorization = `Bearer ${access_token}`
           return api(originalRequest)
         } catch (refreshError) {
+          // Process queued requests with error
+          processQueue(refreshError, null)
+
           // Refresh failed, clear tokens and redirect to login
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
           localStorage.removeItem('user')
           window.location.href = '/login'
           return Promise.reject(refreshError)
+        } finally {
+          isRefreshing = false
         }
       } else {
+        isRefreshing = false
         // No refresh token, redirect to login
         window.location.href = '/login'
       }
