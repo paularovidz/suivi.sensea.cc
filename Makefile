@@ -1,4 +1,4 @@
-.PHONY: help install start stop restart logs shell-api shell-frontend db-shell clean rebuild migrate migrate-fresh seed seed-clean cron cron-sessions cron-reminders cron-calendar cron-cleanup
+.PHONY: help install start stop restart logs shell-api shell-frontend db-shell clean rebuild migrate migrate-fresh seed seed-clean cron cron-sessions cron-reminders cron-calendar cron-cleanup test test-back test-front
 
 # Default target
 help:
@@ -26,6 +26,10 @@ help:
 	@echo "  make cron-reminders- Envoyer les rappels pour demain"
 	@echo "  make cron-calendar - Rafraîchir le cache calendrier Google"
 	@echo "  make cron-cleanup  - Nettoyer les réservations expirées"
+	@echo ""
+	@echo "  make test       - Lancer tous les tests (backend + frontend)"
+	@echo "  make test-back  - Lancer les tests backend (PHPUnit)"
+	@echo "  make test-front - Lancer les tests frontend (Vitest)"
 	@echo ""
 	@echo "  make clean      - Supprimer les conteneurs et volumes"
 	@echo "  make rebuild    - Rebuild complet des images"
@@ -135,3 +139,15 @@ cron-calendar:
 
 cron-cleanup:
 	@docker exec snoezelen_api php /var/www/html/cron/booking-tasks.php cleanup-expired
+
+# Tests
+test: test-back test-front
+	@echo "✓ Tous les tests passent"
+
+test-back:
+	@echo "🧪 Exécution des tests backend (PHPUnit)..."
+	@cd api && vendor/bin/phpunit --testdox
+
+test-front:
+	@echo "🧪 Exécution des tests frontend (Vitest)..."
+	@cd frontend && npm run test:run
