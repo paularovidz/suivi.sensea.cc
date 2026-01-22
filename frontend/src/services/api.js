@@ -101,7 +101,8 @@ export const personsApi = {
 
 // Sessions API
 export const sessionsApi = {
-  getAll: (params) => api.get('/sessions', { params }),
+  list: (params) => api.get('/sessions', { params }),
+  getAll: (params) => api.get('/sessions', { params }), // alias
   getById: (id) => api.get(`/sessions/${id}`),
   getLabels: () => api.get('/sessions/labels'),
   getStats: (params) => api.get('/sessions/stats', { params }),

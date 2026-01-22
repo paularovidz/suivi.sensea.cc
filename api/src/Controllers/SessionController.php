@@ -31,12 +31,26 @@ class SessionController
         $offset = ($page - 1) * $limit;
         $search = isset($_GET['search']) && $_GET['search'] !== '' ? trim($_GET['search']) : null;
 
+        // Filtres de date
+        $filters = [];
+        if (!empty($_GET['date_from'])) {
+            $filters['date_from'] = $_GET['date_from'];
+        }
+        if (!empty($_GET['date_to'])) {
+            $filters['date_to'] = $_GET['date_to'];
+        }
+        if (!empty($_GET['date'])) {
+            // Filtre sur une date précise (début et fin du jour)
+            $filters['date_from'] = $_GET['date'] . ' 00:00:00';
+            $filters['date_to'] = $_GET['date'] . ' 23:59:59';
+        }
+
         if ($isAdmin) {
-            $sessions = Session::findAll($limit, $offset, $search);
-            $total = Session::count($search);
+            $sessions = Session::findAll($limit, $offset, $search, $filters);
+            $total = Session::count($search, $filters);
         } else {
-            $sessions = Session::findByUser($currentUser['id'], $limit, $offset, $search);
-            $total = Session::countByUser($currentUser['id'], $search);
+            $sessions = Session::findByUser($currentUser['id'], $limit, $offset, $search, $filters);
+            $total = Session::countByUser($currentUser['id'], $search, $filters);
         }
 
         Response::success([

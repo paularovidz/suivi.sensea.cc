@@ -253,11 +253,39 @@ class Session
         return $sessions;
     }
 
-    public static function findByUser(string $userId, int $limit = 50, int $offset = 0, ?string $search = null): array
+    public static function findByUser(string $userId, int $limit = 50, int $offset = 0, ?string $search = null, array $filters = []): array
     {
         $db = Database::getInstance();
 
-        $sql = '
+        $where = ['up.user_id = :user_id'];
+        $params = ['user_id' => $userId];
+
+        if ($search !== null && $search !== '') {
+            $where[] = '(
+                p.first_name LIKE :s1
+                OR p.last_name LIKE :s2
+                OR CONCAT(p.first_name, " ", p.last_name) LIKE :s3
+                OR DATE_FORMAT(s.session_date, "%d/%m/%Y") LIKE :s4
+            )';
+            $params['s1'] = '%' . $search . '%';
+            $params['s2'] = '%' . $search . '%';
+            $params['s3'] = '%' . $search . '%';
+            $params['s4'] = '%' . $search . '%';
+        }
+
+        if (!empty($filters['date_from'])) {
+            $where[] = 's.session_date >= :date_from';
+            $params['date_from'] = $filters['date_from'];
+        }
+
+        if (!empty($filters['date_to'])) {
+            $where[] = 's.session_date <= :date_to';
+            $params['date_to'] = $filters['date_to'];
+        }
+
+        $whereClause = 'WHERE ' . implode(' AND ', $where);
+
+        $sql = "
             SELECT s.*,
                    s.duration_minutes as duration_display_minutes,
                    p.first_name as person_first_name,
@@ -266,28 +294,14 @@ class Session
             FROM sessions s
             INNER JOIN persons p ON s.person_id = p.id
             INNER JOIN user_persons up ON p.id = up.person_id
-            WHERE up.user_id = :user_id
-        ';
-
-        if ($search !== null && $search !== '') {
-            $sql .= ' AND (
-                p.first_name LIKE :s1
-                OR p.last_name LIKE :s2
-                OR CONCAT(p.first_name, " ", p.last_name) LIKE :s3
-                OR DATE_FORMAT(s.session_date, "%d/%m/%Y") LIKE :s4
-            )';
-        }
-
-        $sql .= ' ORDER BY s.session_date DESC LIMIT :limit OFFSET :offset';
+            {$whereClause}
+            ORDER BY s.session_date DESC
+            LIMIT :limit OFFSET :offset
+        ";
 
         $stmt = $db->prepare($sql);
-        $stmt->bindValue(':user_id', $userId);
-        if ($search !== null && $search !== '') {
-            $searchPattern = '%' . $search . '%';
-            $stmt->bindValue(':s1', $searchPattern);
-            $stmt->bindValue(':s2', $searchPattern);
-            $stmt->bindValue(':s3', $searchPattern);
-            $stmt->bindValue(':s4', $searchPattern);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(":$key", $value);
         }
         $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
@@ -430,6 +444,16 @@ class Session
             $params['person_id'] = $filters['person_id'];
         }
 
+        if (!empty($filters['date_from'])) {
+            $where[] = 's.session_date >= :date_from';
+            $params['date_from'] = $filters['date_from'];
+        }
+
+        if (!empty($filters['date_to'])) {
+            $where[] = 's.session_date <= :date_to';
+            $params['date_to'] = $filters['date_to'];
+        }
+
         if (!empty($filters['upcoming'])) {
             $where[] = 's.session_date >= NOW()';
         }
@@ -463,34 +487,48 @@ class Session
         return (int)$stmt->fetchColumn();
     }
 
-    public static function countByUser(string $userId, ?string $search = null): int
+    public static function countByUser(string $userId, ?string $search = null, array $filters = []): int
     {
         $db = Database::getInstance();
 
-        $sql = '
-            SELECT COUNT(*) FROM sessions s
-            INNER JOIN persons p ON s.person_id = p.id
-            INNER JOIN user_persons up ON s.person_id = up.person_id
-            WHERE up.user_id = :user_id
-        ';
+        $where = ['up.user_id = :user_id'];
+        $params = ['user_id' => $userId];
 
         if ($search !== null && $search !== '') {
-            $sql .= ' AND (
+            $where[] = '(
                 p.first_name LIKE :s1
                 OR p.last_name LIKE :s2
                 OR CONCAT(p.first_name, " ", p.last_name) LIKE :s3
                 OR DATE_FORMAT(s.session_date, "%d/%m/%Y") LIKE :s4
             )';
+            $params['s1'] = '%' . $search . '%';
+            $params['s2'] = '%' . $search . '%';
+            $params['s3'] = '%' . $search . '%';
+            $params['s4'] = '%' . $search . '%';
         }
 
+        if (!empty($filters['date_from'])) {
+            $where[] = 's.session_date >= :date_from';
+            $params['date_from'] = $filters['date_from'];
+        }
+
+        if (!empty($filters['date_to'])) {
+            $where[] = 's.session_date <= :date_to';
+            $params['date_to'] = $filters['date_to'];
+        }
+
+        $whereClause = 'WHERE ' . implode(' AND ', $where);
+
+        $sql = "
+            SELECT COUNT(*) FROM sessions s
+            INNER JOIN persons p ON s.person_id = p.id
+            INNER JOIN user_persons up ON s.person_id = up.person_id
+            {$whereClause}
+        ";
+
         $stmt = $db->prepare($sql);
-        $stmt->bindValue(':user_id', $userId);
-        if ($search !== null && $search !== '') {
-            $searchPattern = '%' . $search . '%';
-            $stmt->bindValue(':s1', $searchPattern);
-            $stmt->bindValue(':s2', $searchPattern);
-            $stmt->bindValue(':s3', $searchPattern);
-            $stmt->bindValue(':s4', $searchPattern);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(":$key", $value);
         }
         $stmt->execute();
 
