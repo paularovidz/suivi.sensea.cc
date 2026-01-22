@@ -226,6 +226,18 @@ function onBookingStatusChanged({ id, status }) {
   loadStats()
 }
 
+function onBookingUpdated({ id, ...data }) {
+  // Mettre à jour les données localement
+  const booking = bookings.value.find(b => b.id === id)
+  if (booking) {
+    Object.assign(booking, data)
+  }
+  // Mettre à jour le booking sélectionné
+  if (selectedBooking.value?.id === id) {
+    Object.assign(selectedBooking.value, data)
+  }
+}
+
 function onSelectDate(date) {
   // Filtrer sur cette date dans la vue liste
   const dateStr = formatDateStr(date)
@@ -557,6 +569,7 @@ watch(viewMode, (newMode) => {
       @close="closeBookingModal"
       @deleted="onBookingDeleted"
       @status-changed="onBookingStatusChanged"
+      @updated="onBookingUpdated"
     />
   </div>
 </template>

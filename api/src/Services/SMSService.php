@@ -14,6 +14,8 @@ use App\Utils\UUID;
 class SMSService
 {
     private const API_ENDPOINT = 'https://eu.api.ovh.com/1.0';
+    private const CREDITS_CACHE_TTL = 3600; // 1 heure en secondes
+    private const CREDITS_CACHE_FILE = '/tmp/sensea_sms_credits_cache.json';
 
     private static function env(string $key, ?string $default = null): ?string
     {
@@ -299,28 +301,89 @@ class SMSService
     }
 
     /**
-     * Récupère les crédits SMS restants
+     * Récupère les crédits SMS restants (avec cache d'1 heure)
      */
-    public static function getRemainingCredits(): array
+    public static function getRemainingCredits(bool $forceRefresh = false): array
     {
         if (!self::isConfigured()) {
             return ['configured' => false];
         }
 
+        // Vérifier le cache si pas de force refresh
+        if (!$forceRefresh) {
+            $cached = self::getCachedCredits();
+            if ($cached !== null) {
+                return $cached;
+            }
+        }
+
         try {
             $serviceName = self::env('OVH_SMS_SERVICE_NAME');
             $response = self::callOvhApi('GET', "/sms/{$serviceName}");
-            return [
+            $result = [
                 'configured' => true,
                 'serviceName' => $serviceName,
                 'creditsLeft' => $response['creditsLeft'] ?? 0,
                 'credits' => $response['credits'] ?? 0,
-                'description' => $response['description'] ?? null
+                'description' => $response['description'] ?? null,
+                'cached_at' => date('Y-m-d H:i:s')
             ];
+
+            // Mettre en cache
+            self::setCachedCredits($result);
+
+            return $result;
         } catch (\Exception $e) {
             error_log('SMSService: Erreur récupération crédits: ' . $e->getMessage());
             throw $e;
         }
+    }
+
+    /**
+     * Récupère les crédits depuis le cache
+     */
+    private static function getCachedCredits(): ?array
+    {
+        if (!file_exists(self::CREDITS_CACHE_FILE)) {
+            return null;
+        }
+
+        $content = file_get_contents(self::CREDITS_CACHE_FILE);
+        if (!$content) {
+            return null;
+        }
+
+        $data = json_decode($content, true);
+        if (!$data || !isset($data['cached_at'])) {
+            return null;
+        }
+
+        // Vérifier si le cache est encore valide
+        $cachedAt = strtotime($data['cached_at']);
+        if (time() - $cachedAt > self::CREDITS_CACHE_TTL) {
+            return null;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Met en cache les crédits SMS
+     */
+    private static function setCachedCredits(array $data): void
+    {
+        file_put_contents(self::CREDITS_CACHE_FILE, json_encode($data));
+    }
+
+    /**
+     * Vide le cache des crédits SMS
+     */
+    public static function clearCreditsCache(): bool
+    {
+        if (file_exists(self::CREDITS_CACHE_FILE)) {
+            return unlink(self::CREDITS_CACHE_FILE);
+        }
+        return true;
     }
 
     /**

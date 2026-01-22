@@ -230,9 +230,10 @@ async function savePrice() {
                     type="number"
                     min="0"
                     step="1"
-                    class="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                    class="w-20 px-2 py-1 text-sm text-gray-900 bg-white border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
                     @keyup.enter="savePrice"
                     @keyup.escape="cancelEditPrice"
+                    @wheel.prevent
                   />
                   <span class="text-gray-500">€</span>
                   <button

@@ -119,6 +119,7 @@ class Session
         $db = Database::getInstance();
         $stmt = $db->prepare('
             SELECT s.*,
+                   s.duration_minutes as duration_display_minutes,
                    p.first_name as person_first_name,
                    p.last_name as person_last_name,
                    p.birth_date as person_birth_date,
@@ -153,6 +154,7 @@ class Session
         $db = Database::getInstance();
         $stmt = $db->prepare('
             SELECT s.*,
+                   s.duration_minutes as duration_display_minutes,
                    p.first_name as person_first_name,
                    p.last_name as person_last_name,
                    client.email as client_email,
@@ -182,6 +184,7 @@ class Session
         $db = Database::getInstance();
         $stmt = $db->prepare('
             SELECT s.*,
+                   s.duration_minutes as duration_display_minutes,
                    u.first_name as creator_first_name,
                    u.last_name as creator_last_name
             FROM sessions s
@@ -208,6 +211,7 @@ class Session
         $db = Database::getInstance();
         $stmt = $db->prepare('
             SELECT s.*,
+                   s.duration_minutes as duration_display_minutes,
                    p.first_name as person_first_name,
                    p.last_name as person_last_name,
                    client.email as client_email,
@@ -235,6 +239,7 @@ class Session
 
         $sql = '
             SELECT s.*,
+                   s.duration_minutes as duration_display_minutes,
                    p.first_name as person_first_name,
                    p.last_name as person_last_name,
                    p.birth_date as person_birth_date
@@ -333,6 +338,7 @@ class Session
 
         $sql = "
             SELECT s.*,
+                   s.duration_minutes as duration_display_minutes,
                    p.first_name as person_first_name,
                    p.last_name as person_last_name,
                    p.birth_date as person_birth_date,
@@ -834,6 +840,7 @@ class Session
         $db = Database::getInstance();
         $stmt = $db->prepare("
             SELECT s.*,
+                   s.duration_minutes as duration_display_minutes,
                    p.first_name as person_first_name,
                    p.last_name as person_last_name,
                    client.email as client_email,
@@ -864,6 +871,7 @@ class Session
 
         $stmt = $db->prepare("
             SELECT s.*,
+                   s.duration_minutes as duration_display_minutes,
                    p.first_name as person_first_name,
                    p.last_name as person_last_name,
                    client.email as client_email,

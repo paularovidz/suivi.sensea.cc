@@ -137,10 +137,42 @@ class SettingsController
                 'configured' => true,
                 'credits' => $credits['credits'] ?? 0,
                 'credits_left' => $credits['creditsLeft'] ?? 0,
-                'service_name' => $credits['serviceName'] ?? null
+                'service_name' => $credits['serviceName'] ?? null,
+                'cached_at' => $credits['cached_at'] ?? null
             ]);
         } catch (\Exception $e) {
             Response::error('Impossible de récupérer les crédits SMS: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * POST /settings/sms-credits/refresh - Force refresh SMS credits cache
+     */
+    public function refreshSmsCredits(): void
+    {
+        if (!SMSService::isConfigured()) {
+            Response::success([
+                'configured' => false,
+                'message' => 'Service SMS non configuré'
+            ]);
+            return;
+        }
+
+        try {
+            // Vider le cache et forcer le rafraîchissement
+            SMSService::clearCreditsCache();
+            $credits = SMSService::getRemainingCredits(true);
+
+            Response::success([
+                'configured' => true,
+                'credits' => $credits['credits'] ?? 0,
+                'credits_left' => $credits['creditsLeft'] ?? 0,
+                'service_name' => $credits['serviceName'] ?? null,
+                'cached_at' => $credits['cached_at'] ?? null,
+                'message' => 'Cache SMS rafraîchi'
+            ]);
+        } catch (\Exception $e) {
+            Response::error('Impossible de rafraîchir les crédits SMS: ' . $e->getMessage(), 500);
         }
     }
 }

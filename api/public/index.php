@@ -145,6 +145,7 @@ $routes = [
     'GET /settings/category/([a-z]+)' => ['controller' => SettingsController::class, 'method' => 'getByCategory'],
     'PUT /settings' => ['controller' => SettingsController::class, 'method' => 'update'],
     'GET /settings/sms-credits' => ['controller' => SettingsController::class, 'method' => 'getSmsCredits'],
+    'POST /settings/sms-credits/refresh' => ['controller' => SettingsController::class, 'method' => 'refreshSmsCredits'],
 
     // ============================================
     // PUBLIC BOOKING ROUTES (No authentication)

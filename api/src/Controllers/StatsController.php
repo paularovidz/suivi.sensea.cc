@@ -107,61 +107,41 @@ class StatsController
         ");
         $stats['sessions']['wants_to_return'] = $stmt->fetch();
 
-        // Revenue estimation for current month
+        // Revenue calculation using actual session prices
         $regularPrice = Setting::getInteger('session_regular_price', 45);
         $discoveryPrice = Setting::getInteger('session_discovery_price', 55);
-        $discoveryThreshold = Setting::getInteger('session_discovery_display_minutes', 75);
+        $vatRate = 0.20;
 
-        // Count sessions this month by type (based on duration)
+        // Current month revenue (using actual prices from sessions)
+        // For sessions without price, use default based on duration_type
         $stmt = $db->prepare("
             SELECT
-                SUM(CASE WHEN duration_minutes >= :threshold THEN 1 ELSE 0 END) as discovery_count,
-                SUM(CASE WHEN duration_minutes < :threshold2 THEN 1 ELSE 0 END) as regular_count,
+                COUNT(*) as total_count,
+                SUM(CASE WHEN duration_type = 'discovery' THEN 1 ELSE 0 END) as discovery_count,
+                SUM(CASE WHEN duration_type = 'regular' OR duration_type IS NULL THEN 1 ELSE 0 END) as regular_count,
                 SUM(CASE WHEN is_free_session = 1 THEN 1 ELSE 0 END) as free_count,
-                SUM(CASE WHEN duration_minutes >= :threshold3 AND is_free_session = 0 THEN 1 ELSE 0 END) as discovery_paid,
-                SUM(CASE WHEN duration_minutes < :threshold4 AND is_free_session = 0 THEN 1 ELSE 0 END) as regular_paid
+                SUM(CASE
+                    WHEN is_free_session = 1 THEN 0
+                    WHEN price IS NOT NULL THEN price
+                    WHEN duration_type = 'discovery' THEN :discovery_price
+                    ELSE :regular_price
+                END) as total_revenue
             FROM sessions
             WHERE MONTH(session_date) = MONTH(CURRENT_DATE())
             AND YEAR(session_date) = YEAR(CURRENT_DATE())
+            AND status IN ('completed', 'confirmed', 'pending')
         ");
         $stmt->execute([
-            'threshold' => $discoveryThreshold,
-            'threshold2' => $discoveryThreshold,
-            'threshold3' => $discoveryThreshold,
-            'threshold4' => $discoveryThreshold
+            'discovery_price' => $discoveryPrice,
+            'regular_price' => $regularPrice
         ]);
-        $sessionCounts = $stmt->fetch();
+        $monthStats = $stmt->fetch();
 
-        $discoveryCount = (int)($sessionCounts['discovery_count'] ?? 0);
-        $regularCount = (int)($sessionCounts['regular_count'] ?? 0);
-        $freeCount = (int)($sessionCounts['free_count'] ?? 0);
-        $discoveryPaidSessions = (int)($sessionCounts['discovery_paid'] ?? 0);
-        $regularPaidSessions = (int)($sessionCounts['regular_paid'] ?? 0);
-
-        // Count pending/confirmed sessions this month (upcoming bookings)
-        $stmt = $db->query("
-            SELECT
-                SUM(CASE WHEN duration_type = 'discovery' THEN 1 ELSE 0 END) as discovery_count,
-                SUM(CASE WHEN duration_type = 'regular' THEN 1 ELSE 0 END) as regular_count
-            FROM sessions
-            WHERE status IN ('confirmed', 'pending')
-            AND MONTH(session_date) = MONTH(CURRENT_DATE())
-            AND YEAR(session_date) = YEAR(CURRENT_DATE())
-        ");
-        $upcomingCounts = $stmt->fetch();
-
-        $discoveryUpcoming = (int)($upcomingCounts['discovery_count'] ?? 0);
-        $regularUpcoming = (int)($upcomingCounts['regular_count'] ?? 0);
-
-        // Total paid = completed sessions + upcoming sessions
-        $discoveryPaid = $discoveryPaidSessions + $discoveryUpcoming;
-        $regularPaid = $regularPaidSessions + $regularUpcoming;
-
-        $estimatedRevenueTTC = ($discoveryPaid * $discoveryPrice) + ($regularPaid * $regularPrice);
-
-        // Convert to HT (excluding 20% VAT)
-        $vatRate = 0.20;
-        $estimatedRevenueHT = round($estimatedRevenueTTC / (1 + $vatRate), 2);
+        $monthRevenueTTC = (float)($monthStats['total_revenue'] ?? 0);
+        $monthRevenueHT = round($monthRevenueTTC / (1 + $vatRate), 2);
+        $discoveryCount = (int)($monthStats['discovery_count'] ?? 0);
+        $regularCount = (int)($monthStats['regular_count'] ?? 0);
+        $freeCount = (int)($monthStats['free_count'] ?? 0);
 
         // Fiscal year revenue (October 1 - September 30)
         $now = new \DateTime();
@@ -179,52 +159,42 @@ class StatsController
             $fiscalYearEnd = "$currentYear-09-30";
         }
 
-        // Sessions in fiscal year
+        // Fiscal year revenue (using actual prices)
         $stmt = $db->prepare("
             SELECT
-                SUM(CASE WHEN duration_minutes >= :threshold AND is_free_session = 0 THEN 1 ELSE 0 END) as discovery_paid,
-                SUM(CASE WHEN duration_minutes < :threshold2 AND is_free_session = 0 THEN 1 ELSE 0 END) as regular_paid
+                SUM(CASE
+                    WHEN is_free_session = 1 THEN 0
+                    WHEN price IS NOT NULL THEN price
+                    WHEN duration_type = 'discovery' THEN :discovery_price
+                    ELSE :regular_price
+                END) as total_revenue
             FROM sessions
             WHERE session_date >= :fiscal_start AND session_date <= :fiscal_end
+            AND status IN ('completed', 'confirmed', 'pending')
         ");
         $stmt->execute([
-            'threshold' => $discoveryThreshold,
-            'threshold2' => $discoveryThreshold,
+            'discovery_price' => $discoveryPrice,
+            'regular_price' => $regularPrice,
             'fiscal_start' => $fiscalYearStart,
             'fiscal_end' => $fiscalYearEnd . ' 23:59:59'
         ]);
-        $fiscalSessionCounts = $stmt->fetch();
+        $fiscalStats = $stmt->fetch();
 
-        // Upcoming sessions in fiscal year (pending/confirmed)
-        $stmt = $db->prepare("
-            SELECT
-                SUM(CASE WHEN duration_type = 'discovery' THEN 1 ELSE 0 END) as discovery_count,
-                SUM(CASE WHEN duration_type = 'regular' THEN 1 ELSE 0 END) as regular_count
-            FROM sessions
-            WHERE status IN ('confirmed', 'pending')
-            AND session_date >= :fiscal_start AND session_date <= :fiscal_end
-        ");
-        $stmt->execute([
-            'fiscal_start' => $fiscalYearStart,
-            'fiscal_end' => $fiscalYearEnd . ' 23:59:59'
-        ]);
-        $fiscalUpcomingCounts = $stmt->fetch();
-
-        $fiscalDiscoveryPaid = (int)($fiscalSessionCounts['discovery_paid'] ?? 0) + (int)($fiscalUpcomingCounts['discovery_count'] ?? 0);
-        $fiscalRegularPaid = (int)($fiscalSessionCounts['regular_paid'] ?? 0) + (int)($fiscalUpcomingCounts['regular_count'] ?? 0);
-        $fiscalRevenueTTC = ($fiscalDiscoveryPaid * $discoveryPrice) + ($fiscalRegularPaid * $regularPrice);
+        $fiscalRevenueTTC = (float)($fiscalStats['total_revenue'] ?? 0);
         $fiscalRevenueHT = round($fiscalRevenueTTC / (1 + $vatRate), 2);
 
         $stats['revenue'] = [
-            'estimated_this_month_ht' => $estimatedRevenueHT,
+            'this_month_ht' => $monthRevenueHT,
+            'this_month_ttc' => $monthRevenueTTC,
             'fiscal_year_ht' => $fiscalRevenueHT,
+            'fiscal_year_ttc' => $fiscalRevenueTTC,
             'fiscal_year_start' => $fiscalYearStart,
             'fiscal_year_end' => $fiscalYearEnd,
-            'discovery_count' => $discoveryCount + $discoveryUpcoming,
-            'regular_count' => $regularCount + $regularUpcoming,
+            'discovery_count' => $discoveryCount,
+            'regular_count' => $regularCount,
             'free_count' => $freeCount,
-            'discovery_price' => $discoveryPrice,
-            'regular_price' => $regularPrice
+            'default_discovery_price' => $discoveryPrice,
+            'default_regular_price' => $regularPrice
         ];
 
         // Recent activity (last 10 audit logs)

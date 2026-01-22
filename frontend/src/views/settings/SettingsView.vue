@@ -37,19 +37,33 @@
           <div v-else-if="smsCredits.error" class="text-red-400">
             {{ smsCredits.error }}
           </div>
-          <div v-else class="flex items-center space-x-6">
-            <div>
-              <span class="text-3xl font-bold text-primary-400">{{ smsCredits.credits_left }}</span>
-              <span class="text-gray-400 ml-1">crédits restants</span>
-            </div>
-            <div class="text-sm text-gray-400">
-              Service: {{ smsCredits.service_name || 'OVH SMS' }}
+          <div v-else class="flex items-center justify-between">
+            <div class="flex items-center space-x-6">
+              <div>
+                <span class="text-3xl font-bold text-primary-400">{{ smsCredits.credits_left }}</span>
+                <span class="text-gray-400 ml-1">crédits restants</span>
+              </div>
+              <div class="text-sm text-gray-400">
+                Service: {{ smsCredits.service_name || 'OVH SMS' }}
+              </div>
+              <div v-if="smsCredits.cached_at" class="text-xs text-gray-500">
+                Mis à jour: {{ formatCacheTime(smsCredits.cached_at) }}
+              </div>
             </div>
             <button
-              @click="loadSmsCredits"
-              class="text-primary-400 hover:text-primary-300 text-sm"
+              @click="refreshSmsCredits"
+              :disabled="smsCredits.refreshing"
+              class="flex items-center px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-lg transition-colors disabled:opacity-50"
             >
-              Actualiser
+              <svg
+                :class="['w-4 h-4 mr-1.5', smsCredits.refreshing ? 'animate-spin' : '']"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {{ smsCredits.refreshing ? 'Actualisation...' : 'Actualiser' }}
             </button>
           </div>
         </div>
@@ -108,6 +122,7 @@
                     type="number"
                     v-model.number="formData[setting.key]"
                     class="w-24 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    @wheel.prevent
                   />
                   <span v-if="isPriceField(setting.key)" class="ml-2 text-gray-400">€</span>
                 </div>
@@ -290,9 +305,11 @@ const businessHours = reactive({
 
 const smsCredits = reactive({
   loading: true,
+  refreshing: false,
   configured: false,
   credits_left: 0,
   service_name: null,
+  cached_at: null,
   error: null
 })
 
@@ -308,6 +325,13 @@ function isTimeField(key) {
 // Check if a field is a price field
 function isPriceField(key) {
   return key.includes('_price')
+}
+
+// Format cache time for display
+function formatCacheTime(dateStr) {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
 onMounted(async () => {
@@ -357,10 +381,30 @@ async function loadSmsCredits() {
     smsCredits.configured = data.configured
     smsCredits.credits_left = data.credits_left || 0
     smsCredits.service_name = data.service_name
+    smsCredits.cached_at = data.cached_at || null
   } catch (err) {
     smsCredits.error = err.response?.data?.message || 'Erreur lors du chargement des crédits SMS'
   } finally {
     smsCredits.loading = false
+  }
+}
+
+async function refreshSmsCredits() {
+  smsCredits.refreshing = true
+  smsCredits.error = null
+
+  try {
+    const response = await settingsApi.refreshSmsCredits()
+    const data = response.data.data || response.data
+
+    smsCredits.configured = data.configured
+    smsCredits.credits_left = data.credits_left || 0
+    smsCredits.service_name = data.service_name
+    smsCredits.cached_at = data.cached_at || null
+  } catch (err) {
+    smsCredits.error = err.response?.data?.message || 'Erreur lors du rafraîchissement des crédits SMS'
+  } finally {
+    smsCredits.refreshing = false
   }
 }
 

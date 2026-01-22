@@ -48,6 +48,7 @@ const form = ref({
   person_expression: '',
   next_session_proposals: '',
   proposals: [],
+  price: null,
   is_invoiced: false,
   is_paid: false,
   is_free_session: false
@@ -168,6 +169,7 @@ onMounted(async () => {
           type: p.type,
           appreciation: p.appreciation || ''
         })),
+        price: session.price ?? null,
         is_invoiced: session.is_invoiced || false,
         is_paid: session.is_paid || false,
         is_free_session: session.is_free_session || false
@@ -374,7 +376,7 @@ function cancel() {
 
           <div>
             <label for="duration_minutes" class="label">Durée (minutes) *</label>
-            <input id="duration_minutes" v-model.number="form.duration_minutes" type="number" min="1" class="input" required />
+            <input id="duration_minutes" v-model.number="form.duration_minutes" type="number" min="1" class="input" required @wheel.prevent />
           </div>
         </div>
       </div>
@@ -554,7 +556,23 @@ function cancel() {
         <div class="px-6 py-4 border-b border-gray-700">
           <h2 class="font-semibold text-white">Facturation</h2>
         </div>
-        <div class="p-6">
+        <div class="p-6 space-y-4">
+          <div class="flex items-center gap-4">
+            <div class="w-32">
+              <label for="price" class="label">Prix (€)</label>
+              <input
+                id="price"
+                v-model.number="form.price"
+                type="number"
+                min="0"
+                step="1"
+                class="input"
+                placeholder="45"
+                :disabled="form.is_free_session"
+                @wheel.prevent
+              />
+            </div>
+          </div>
           <div class="flex flex-wrap gap-6">
             <label class="flex items-center cursor-pointer">
               <input

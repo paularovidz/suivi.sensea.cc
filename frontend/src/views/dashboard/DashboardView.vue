@@ -109,7 +109,7 @@ function formatFiscalYear(startDate) {
         </div>
         <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
           <div class="text-sm text-gray-400 mb-1">CA HT du mois</div>
-          <div class="text-3xl font-bold text-primary-400">{{ formatCurrency(stats.revenue?.estimated_this_month_ht || 0) }}</div>
+          <div class="text-3xl font-bold text-primary-400">{{ formatCurrency(stats.revenue?.this_month_ht || 0) }}</div>
           <div v-if="stats.revenue" class="text-xs text-gray-500 mt-1">
             {{ stats.revenue.discovery_count }} découverte{{ stats.revenue.discovery_count > 1 ? 's' : '' }} ·
             {{ stats.revenue.regular_count }} classique{{ stats.revenue.regular_count > 1 ? 's' : '' }}

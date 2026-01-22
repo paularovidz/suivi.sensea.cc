@@ -1,12 +1,48 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { settingsApi } from '@/services/api'
 import ImpersonationBanner from '@/components/ui/ImpersonationBanner.vue'
 
 const authStore = useAuthStore()
 const route = useRoute()
 const mobileMenuOpen = ref(false)
+
+// SMS Credits alert
+const smsCredits = ref(null)
+const smsAlertDismissed = ref(false)
+const SMS_LOW_THRESHOLD = 20
+
+const showSmsAlert = computed(() => {
+  return authStore.isAdmin &&
+    smsCredits.value !== null &&
+    smsCredits.value < SMS_LOW_THRESHOLD &&
+    !smsAlertDismissed.value
+})
+
+onMounted(async () => {
+  if (authStore.isAdmin) {
+    await loadSmsCredits()
+  }
+})
+
+async function loadSmsCredits() {
+  try {
+    const response = await settingsApi.getSmsCredits()
+    const data = response.data.data || response.data
+    if (data.configured) {
+      smsCredits.value = data.credits_left || 0
+    }
+  } catch (e) {
+    // Silently fail - not critical
+    console.error('Failed to load SMS credits:', e)
+  }
+}
+
+function dismissSmsAlert() {
+  smsAlertDismissed.value = true
+}
 
 const navigation = computed(() => {
   const items = [
@@ -42,6 +78,36 @@ async function handleLogout() {
   <div class="min-h-screen bg-gray-900">
     <!-- Impersonation Banner -->
     <ImpersonationBanner />
+
+    <!-- SMS Low Credits Alert -->
+    <div
+      v-if="showSmsAlert"
+      class="bg-amber-900/80 border-b border-amber-700"
+    >
+      <div class="max-w-7xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between flex-wrap">
+          <div class="flex items-center flex-1">
+            <span class="flex p-1.5 rounded-lg bg-amber-800">
+              <svg class="h-5 w-5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </span>
+            <p class="ml-3 text-sm font-medium text-amber-100">
+              <span class="font-bold">Attention :</span> Il ne reste que <span class="font-bold">{{ smsCredits }}</span> crédits SMS.
+              <RouterLink to="/app/settings" class="underline hover:text-white ml-1">Voir les paramètres</RouterLink>
+            </p>
+          </div>
+          <button
+            @click="dismissSmsAlert"
+            class="flex-shrink-0 ml-4 p-1 rounded-md hover:bg-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          >
+            <svg class="h-5 w-5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Mobile menu button -->
     <div class="lg:hidden fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3">

@@ -172,7 +172,8 @@ export const settingsApi = {
   getAll: () => api.get('/settings'),
   getByCategory: (category) => api.get(`/settings/category/${category}`),
   update: (settings) => api.put('/settings', { settings }),
-  getSmsCredits: () => api.get('/settings/sms-credits')
+  getSmsCredits: () => api.get('/settings/sms-credits'),
+  refreshSmsCredits: () => api.post('/settings/sms-credits/refresh')
 }
 
 // Documents API (Admin - auth required)
