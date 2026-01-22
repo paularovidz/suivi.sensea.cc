@@ -223,6 +223,16 @@ onMounted(async () => {
 
   await fetchAvailableDates()
 
+  // Si une date est déjà sélectionnée (retour depuis l'étape 4), recharger les créneaux
+  if (bookingStore.selectedDate) {
+    loadingSlots.value = true
+    try {
+      await bookingStore.fetchAvailableSlots(bookingStore.selectedDate)
+    } finally {
+      loadingSlots.value = false
+    }
+  }
+
   // Check if manual promo codes exist
   await bookingStore.checkHasManualPromoCodes()
 
