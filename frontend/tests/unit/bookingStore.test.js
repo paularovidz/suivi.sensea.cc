@@ -30,7 +30,7 @@ describe('Booking Store State', () => {
 
     it('advances to next step when valid', () => {
       const state = createInitialState()
-      state.isNewClient = true // Valid for step 1
+      state.isNewClient = true // Valid for step 1 (set after email lookup)
 
       const newState = nextStep(state)
       expect(newState.currentStep).toBe(2)
@@ -38,7 +38,7 @@ describe('Booking Store State', () => {
 
     it('does not advance when step is invalid', () => {
       const state = createInitialState()
-      // isNewClient is null, so step 1 is invalid
+      // isNewClient is null (email not yet looked up), so step 1 is invalid
 
       const newState = nextStep(state)
       expect(newState.currentStep).toBe(1) // Should stay
@@ -71,16 +71,18 @@ describe('Booking Store State', () => {
   })
 
   describe('Step Validation (canGoNext)', () => {
-    it('step 1 requires isNewClient to be set', () => {
+    // Note: L'étape 1 demande l'email (validation au niveau composant)
+    // puis détermine isNewClient via l'API. Le store vérifie que isNewClient est défini.
+    it('step 1 requires isNewClient to be determined (after email lookup)', () => {
       const state = createInitialState()
 
       state.isNewClient = null
       expect(canGoNext(state)).toBe(false)
 
-      state.isNewClient = true
+      state.isNewClient = true // Nouveau client (email non trouvé)
       expect(canGoNext(state)).toBe(true)
 
-      state.isNewClient = false
+      state.isNewClient = false // Client existant (email trouvé)
       expect(canGoNext(state)).toBe(true)
     })
 
@@ -412,6 +414,7 @@ function createInitialState() {
 function canGoNext(state) {
   switch (state.currentStep) {
     case 1:
+      // Step 1: isNewClient is set after email lookup in component
       return state.isNewClient !== null
     case 2:
       if (state.isNewClient) {

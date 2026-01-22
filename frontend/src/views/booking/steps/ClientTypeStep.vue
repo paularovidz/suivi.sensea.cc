@@ -2,66 +2,46 @@
   <div class="p-6">
     <h2 class="text-xl font-semibold text-white mb-2">Bienvenue !</h2>
     <p class="text-gray-400 mb-6">
-      Comment souhaitez-vous procéder pour votre réservation ?
+      Entrez votre adresse email pour commencer votre réservation.
     </p>
 
-    <div class="space-y-4">
-      <!-- New client -->
-      <button
-        @click="selectType(true)"
-        :class="[
-          'w-full p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-start',
-          bookingStore.isNewClient === true
-            ? 'border-indigo-500 bg-indigo-500/20'
-            : 'border-gray-600 hover:border-indigo-400 hover:bg-gray-700/50'
-        ]"
-      >
-        <div
-          :class="[
-            'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mr-4',
-            bookingStore.isNewClient === true ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-400'
-          ]"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-        </div>
-        <div>
-          <h3 class="font-medium text-white">C'est ma première fois</h3>
-          <p class="text-sm text-gray-400 mt-1">
-            Je souhaite découvrir les séances Snoezelen (séance découverte de 1h15)
-          </p>
-        </div>
-      </button>
-
-      <!-- Returning client -->
-      <button
-        @click="selectType(false)"
-        :class="[
-          'w-full p-4 rounded-xl border-2 text-left transition-all duration-200 flex items-start',
-          bookingStore.isNewClient === false
-            ? 'border-indigo-500 bg-indigo-500/20'
-            : 'border-gray-600 hover:border-indigo-400 hover:bg-gray-700/50'
-        ]"
-      >
-        <div
-          :class="[
-            'w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mr-4',
-            bookingStore.isNewClient === false ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-400'
-          ]"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </div>
-        <div>
-          <h3 class="font-medium text-white">Je suis déjà venu(e)</h3>
-          <p class="text-sm text-gray-400 mt-1">
-            Je souhaite prendre un nouveau rendez-vous (séance de 45 minutes)
-          </p>
-        </div>
-      </button>
+    <!-- Email input -->
+    <div class="mb-6">
+      <label for="email-booking" class="block text-sm font-medium text-gray-300 mb-1">
+        Adresse email <span class="text-red-400">*</span>
+      </label>
+      <input
+        id="email-booking"
+        v-model="email"
+        type="email"
+        placeholder="votre@email.com"
+        class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        :disabled="loading"
+        @keyup.enter="handleSubmit"
+      />
+      <p v-if="error" class="mt-2 text-sm text-red-400">{{ error }}</p>
     </div>
+
+    <!-- Submit button -->
+    <button
+      @click="handleSubmit"
+      :disabled="!isValidEmail || loading"
+      :class="[
+        'w-full px-6 py-3 rounded-lg font-medium flex items-center justify-center transition-all duration-200',
+        isValidEmail && !loading
+          ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+          : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+      ]"
+    >
+      <svg v-if="loading" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span>{{ loading ? 'Recherche...' : 'Continuer' }}</span>
+      <svg v-if="!loading" class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
 
     <!-- Session type info -->
     <div class="mt-6 p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
@@ -85,32 +65,63 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useBookingStore } from '@/stores/booking'
 
 const emit = defineEmits(['selected'])
 
 const bookingStore = useBookingStore()
 
-function selectType(isNew) {
-  // Reset all following steps if changing client type
-  if (bookingStore.isNewClient !== isNew && bookingStore.isNewClient !== null) {
-    bookingStore.resetFollowingSteps()
-    // Also reset person selection
-    bookingStore.selectedPersonId = null
-    bookingStore.newPerson = { firstName: '', lastName: '' }
-    bookingStore.existingPersons = []
-    bookingStore.existingClientInfo = null
-  }
+const email = ref('')
+const loading = ref(false)
+const error = ref('')
 
-  bookingStore.isNewClient = isNew
-  // Set duration type based on selection
-  if (isNew) {
+// Restore email if already set
+onMounted(() => {
+  if (bookingStore.clientInfo.email) {
+    email.value = bookingStore.clientInfo.email
+  }
+})
+
+const isValidEmail = computed(() => {
+  return email.value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)
+})
+
+async function handleSubmit() {
+  if (!isValidEmail.value || loading.value) return
+
+  error.value = ''
+  loading.value = true
+
+  try {
+    // Store email for later
+    bookingStore.clientInfo.email = email.value.trim().toLowerCase()
+
+    // Check if email exists and fetch persons
+    await bookingStore.fetchPersonsByEmail(email.value)
+
+    // Determine if new or existing client based on API response
+    const isExistingClient = bookingStore.existingClientInfo !== null
+
+    if (isExistingClient) {
+      // Existing client: regular session
+      bookingStore.isNewClient = false
+      bookingStore.setDurationType('regular')
+    } else {
+      // New client: discovery session
+      bookingStore.isNewClient = true
+      bookingStore.setDurationType('discovery')
+    }
+
+    // Auto-advance to next step
+    emit('selected')
+  } catch (err) {
+    // Even on error, treat as new client
+    bookingStore.isNewClient = true
     bookingStore.setDurationType('discovery')
-  } else {
-    bookingStore.setDurationType('regular')
+    emit('selected')
+  } finally {
+    loading.value = false
   }
-
-  // Emit event to auto-advance
-  emit('selected')
 }
 </script>

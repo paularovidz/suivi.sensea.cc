@@ -1,12 +1,15 @@
 <template>
   <div class="p-6">
+    <h2 class="text-xl font-semibold text-white mb-2">Pour qui est cette séance ?</h2>
+    <p class="text-gray-400 mb-6">
+      {{ bookingStore.isNewClient
+        ? 'Indiquez les informations de la personne qui profitera de la séance Snoezelen.'
+        : 'Sélectionnez la personne qui profitera de la séance Snoezelen.'
+      }}
+    </p>
+
     <!-- New client: just enter person info -->
     <template v-if="bookingStore.isNewClient">
-      <h2 class="text-xl font-semibold text-white mb-2">Pour qui est cette séance ?</h2>
-      <p class="text-gray-400 mb-6">
-        Indiquez les informations de la personne qui profitera de la séance Snoezelen.
-      </p>
-
       <div class="space-y-4">
         <div>
           <label for="person-firstname" class="block text-sm font-medium text-gray-300 mb-1">
@@ -43,56 +46,10 @@
       </p>
     </template>
 
-    <!-- Returning client: email lookup -->
+    <!-- Existing client: show persons list -->
     <template v-else>
-      <h2 class="text-xl font-semibold text-white mb-2">
-        {{ isAuthenticatedUser ? 'Pour qui est cette séance ?' : 'Retrouvez votre dossier' }}
-      </h2>
-      <p class="text-gray-400 mb-6">
-        {{ isAuthenticatedUser
-          ? 'Sélectionnez la personne qui profitera de la séance Snoezelen.'
-          : 'Entrez votre adresse email pour retrouver les personnes déjà enregistrées.'
-        }}
-      </p>
-
-      <!-- Email input (hidden for authenticated users) -->
-      <div v-if="!isAuthenticatedUser" class="mb-6">
-        <label for="email-lookup" class="block text-sm font-medium text-gray-300 mb-1">
-          Adresse email
-        </label>
-        <div class="flex space-x-2">
-          <input
-            id="email-lookup"
-            v-model="emailLookup"
-            type="email"
-            placeholder="votre@email.com"
-            class="flex-1 px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            @keyup.enter="lookupEmail"
-          />
-          <button
-            @click="lookupEmail"
-            :disabled="!emailLookup || bookingStore.loading"
-            :class="[
-              'px-4 py-3 rounded-lg font-medium transition-colors',
-              emailLookup && !bookingStore.loading
-                ? 'bg-indigo-600 text-white hover:bg-indigo-500'
-                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-            ]"
-          >
-            <span v-if="bookingStore.loading" class="flex items-center">
-              <svg class="animate-spin h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-              </svg>
-            </span>
-            <span v-else>Rechercher</span>
-          </button>
-        </div>
-      </div>
-
       <!-- Existing persons list -->
-      <div v-if="hasSearched && bookingStore.existingPersons.length > 0" class="mb-6">
-        <h3 v-if="!isAuthenticatedUser" class="text-sm font-medium text-gray-300 mb-3">Personnes trouvées</h3>
+      <div v-if="bookingStore.existingPersons.length > 0" class="mb-6">
         <div class="space-y-2">
           <button
             v-for="person in bookingStore.existingPersons"
@@ -130,18 +87,15 @@
         </div>
       </div>
 
-      <!-- No results -->
-      <div v-if="hasSearched && bookingStore.existingPersons.length === 0" class="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+      <!-- No persons found -->
+      <div v-if="bookingStore.existingPersons.length === 0 && !showNewPersonForm" class="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
         <p class="text-sm text-amber-300">
-          {{ isAuthenticatedUser
-            ? 'Vous n\'avez pas encore de personne enregistrée. Créez une fiche ci-dessous.'
-            : 'Aucun dossier trouvé pour cette adresse email. Vous pouvez créer une nouvelle fiche ci-dessous.'
-          }}
+          Aucune personne enregistrée pour cette adresse email. Créez une fiche ci-dessous.
         </p>
       </div>
 
       <!-- Add new person option -->
-      <div v-if="hasSearched" class="border-t border-gray-700 pt-6">
+      <div :class="bookingStore.existingPersons.length > 0 ? 'border-t border-gray-700 pt-6' : ''">
         <button
           @click="toggleNewPerson"
           :class="[
@@ -193,71 +147,19 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useBookingStore } from '@/stores/booking'
-import { useAuthStore } from '@/stores/auth'
-import { useToastStore } from '@/stores/toast'
 
 const bookingStore = useBookingStore()
-const authStore = useAuthStore()
-const toastStore = useToastStore()
 
-const emailLookup = ref('')
-const hasSearched = ref(false)
 const showNewPersonForm = ref(false)
 
-// Utilisateur connecté = personnes déjà chargées
-const isAuthenticatedUser = computed(() => {
-  return authStore.isAuthenticated && authStore.user
-})
-
 onMounted(() => {
-  // Si utilisateur connecté
-  if (isAuthenticatedUser.value) {
-    hasSearched.value = true
-    emailLookup.value = authStore.user.email
-    // Si pas de personnes, afficher le formulaire d'ajout
-    if (bookingStore.existingPersons.length === 0) {
-      showNewPersonForm.value = true
-    }
+  // If no persons found for existing client, show new person form
+  if (!bookingStore.isNewClient && bookingStore.existingPersons.length === 0) {
+    showNewPersonForm.value = true
   }
 })
-
-// Restore email if clientInfo already has one
-watch(() => bookingStore.clientInfo.email, (email) => {
-  if (email && !emailLookup.value) {
-    emailLookup.value = email
-  }
-}, { immediate: true })
-
-async function lookupEmail() {
-  if (!emailLookup.value) return
-
-  // Reset following steps when changing email/client
-  bookingStore.resetFollowingSteps()
-
-  // Store email for later use in contact step
-  bookingStore.clientInfo.email = emailLookup.value
-
-  // Reset person selection
-  bookingStore.selectedPersonId = null
-  bookingStore.newPerson = { firstName: '', lastName: '' }
-  showNewPersonForm.value = false
-
-  try {
-    await bookingStore.fetchPersonsByEmail(emailLookup.value)
-    hasSearched.value = true
-
-    // If no persons found, show the new person form
-    if (bookingStore.existingPersons.length === 0) {
-      showNewPersonForm.value = true
-    }
-  } catch (err) {
-    hasSearched.value = true
-    showNewPersonForm.value = true
-    toastStore.apiError(err, 'Erreur lors de la recherche')
-  }
-}
 
 function selectPerson(person) {
   // Reset date/time if selecting a different person
@@ -268,7 +170,7 @@ function selectPerson(person) {
   bookingStore.newPerson = { firstName: '', lastName: '' }
   showNewPersonForm.value = false
 
-  // Passer automatiquement à l'étape suivante
+  // Auto-advance to next step
   nextTick(() => {
     bookingStore.nextStep()
   })

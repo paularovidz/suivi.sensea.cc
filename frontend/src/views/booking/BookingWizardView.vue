@@ -131,8 +131,9 @@ onMounted(async () => {
 async function initForAuthenticatedUser() {
   const user = authStore.user
 
-  // Marquer comme client existant
+  // Marquer comme client existant et définir le type de séance
   bookingStore.isNewClient = false
+  bookingStore.setDurationType('regular')
 
   // Pré-remplir les infos client
   bookingStore.clientInfo.email = user.email
@@ -157,7 +158,8 @@ async function initForAuthenticatedUser() {
     client_type: user.client_type || 'personal',
     client_type_label: { personal: 'Particulier', association: 'Association', friends_family: 'Friends & Family' }[user.client_type] || 'Particulier',
     company_name: user.company_name || null,
-    has_company: !!user.company_name
+    has_company: !!user.company_name,
+    is_active: user.is_active !== false // Par défaut true pour les utilisateurs connectés
   }
 
   // Charger les personnes assignées à l'utilisateur
