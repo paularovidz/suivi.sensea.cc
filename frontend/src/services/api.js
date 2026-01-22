@@ -249,7 +249,11 @@ export const documentsApi = {
   download: (id) => api.get(`/documents/${id}/download`, { responseType: 'blob' }),
   view: (id) => api.get(`/documents/${id}/view`, { responseType: 'blob' }),
   getViewUrl: (id) => `${API_URL}/documents/${id}/view`,
-  delete: (id) => api.delete(`/documents/${id}`)
+  delete: (id) => api.delete(`/documents/${id}`),
+  // Documents des séances d'une personne
+  listByPersonSessions: (personId) => api.get(`/documents/person-sessions/${personId}`),
+  // Documents des séances de l'utilisateur connecté (toutes ses personnes)
+  listMySessionDocuments: () => api.get('/documents/my-sessions')
 }
 
 // Promo Codes API (Admin - auth required)

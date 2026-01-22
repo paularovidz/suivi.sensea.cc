@@ -25,7 +25,7 @@ class Document
     public const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     // Types d'entités pouvant avoir des documents
-    public const DOCUMENTABLE_TYPES = ['user', 'person'];
+    public const DOCUMENTABLE_TYPES = ['user', 'person', 'session'];
 
     // Extensions autorisées
     public const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
@@ -225,5 +225,56 @@ class Document
         } else {
             return round($bytes / (1024 * 1024), 1) . ' MB';
         }
+    }
+
+    /**
+     * Trouve tous les documents des séances d'une personne
+     */
+    public static function findByPersonSessions(string $personId): array
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare('
+            SELECT d.*,
+                   u.first_name as uploader_first_name,
+                   u.last_name as uploader_last_name,
+                   s.session_date,
+                   s.id as session_id
+            FROM documents d
+            INNER JOIN users u ON d.uploaded_by = u.id
+            INNER JOIN sessions s ON d.documentable_id = s.id AND d.documentable_type = \'session\'
+            WHERE s.person_id = :person_id
+            ORDER BY s.session_date DESC, d.created_at DESC
+        ');
+        $stmt->execute(['person_id' => $personId]);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Trouve tous les documents des séances de toutes les personnes assignées à un utilisateur
+     */
+    public static function findByUserPersonsSessions(string $userId): array
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare('
+            SELECT d.*,
+                   u.first_name as uploader_first_name,
+                   u.last_name as uploader_last_name,
+                   s.session_date,
+                   s.id as session_id,
+                   p.first_name as person_first_name,
+                   p.last_name as person_last_name,
+                   p.id as person_id
+            FROM documents d
+            INNER JOIN users u ON d.uploaded_by = u.id
+            INNER JOIN sessions s ON d.documentable_id = s.id AND d.documentable_type = \'session\'
+            INNER JOIN persons p ON s.person_id = p.id
+            INNER JOIN user_persons up ON p.id = up.person_id
+            WHERE up.user_id = :user_id
+            ORDER BY d.created_at DESC
+        ');
+        $stmt->execute(['user_id' => $userId]);
+
+        return $stmt->fetchAll();
     }
 }

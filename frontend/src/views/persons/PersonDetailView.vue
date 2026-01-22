@@ -9,6 +9,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import PersonSessionStats from '@/components/sessions/PersonSessionStats.vue'
 import DocumentsSection from '@/components/documents/DocumentsSection.vue'
+import SessionDocumentsList from '@/components/documents/SessionDocumentsList.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -184,6 +185,34 @@ function getBehaviorBadgeClass(behavior) {
         </div>
       </div>
 
+      <!-- Assigned users -->
+      <div v-if="person.assigned_users?.length" class="bg-gray-800 rounded-xl border border-gray-700">
+        <div class="px-6 py-4 border-b border-gray-700">
+          <h2 class="font-semibold text-white">Assigné à</h2>
+        </div>
+        <div class="px-6 py-4">
+          <div class="flex flex-wrap gap-3">
+            <RouterLink
+              v-for="user in person.assigned_users"
+              :key="user.id"
+              :to="`/app/users/${user.id}`"
+              class="flex items-center px-3 py-2 bg-gray-700/50 hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <div class="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-medium mr-2">
+                {{ user.first_name?.charAt(0) }}{{ user.last_name?.charAt(0) }}
+              </div>
+              <div>
+                <div class="text-sm font-medium text-white">{{ user.first_name }} {{ user.last_name }}</div>
+                <div class="text-xs text-gray-400">{{ user.email }}</div>
+              </div>
+              <svg class="w-4 h-4 text-gray-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </RouterLink>
+          </div>
+        </div>
+      </div>
+
       <!-- Upcoming bookings (without session yet) -->
       <div v-if="upcomingBookings.length > 0" class="bg-gray-800 rounded-xl border border-gray-700">
         <div class="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
@@ -315,6 +344,14 @@ function getBehaviorBadgeClass(behavior) {
         v-if="authStore.isAdmin"
         type="person"
         :entity-id="person.id"
+        title="Documents de la personne"
+      />
+
+      <!-- Documents des séances (admin only) -->
+      <SessionDocumentsList
+        v-if="authStore.isAdmin"
+        :person-id="person.id"
+        title="Documents des séances (factures)"
       />
     </template>
 

@@ -241,6 +241,7 @@ const usageProgress = computed(() => {
               <dd class="text-white">
                 <span v-if="promoCode.target_client_type === 'personal'">Particuliers</span>
                 <span v-else-if="promoCode.target_client_type === 'association'">Associations</span>
+                <span v-else-if="promoCode.target_client_type === 'friends_family'">Friends & Family</span>
                 <span v-else>Tous</span>
               </dd>
             </div>

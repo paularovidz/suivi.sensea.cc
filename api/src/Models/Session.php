@@ -68,7 +68,8 @@ class Session
         ],
         'client_type' => [
             'personal' => 'Particulier',
-            'association' => 'Association'
+            'association' => 'Association',
+            'friends_family' => 'Friends & Family'
         ],
         'behavior' => [
             'calm' => 'Calme',

@@ -13,24 +13,44 @@ class User
     // Client types
     public const CLIENT_TYPE_PERSONAL = 'personal';
     public const CLIENT_TYPE_ASSOCIATION = 'association';
+    public const CLIENT_TYPE_FRIENDS_FAMILY = 'friends_family';
 
     public const CLIENT_TYPES = [
         self::CLIENT_TYPE_PERSONAL,
-        self::CLIENT_TYPE_ASSOCIATION
+        self::CLIENT_TYPE_ASSOCIATION,
+        self::CLIENT_TYPE_FRIENDS_FAMILY
     ];
 
     public const CLIENT_TYPE_LABELS = [
         'personal' => 'Particulier',
-        'association' => 'Association'
+        'association' => 'Association',
+        'friends_family' => 'Friends & Family'
+    ];
+
+    // Types de clients qui sont traités comme des particuliers (pour rate limiting, fidélité, etc.)
+    public const PERSONAL_LIKE_TYPES = [
+        self::CLIENT_TYPE_PERSONAL,
+        self::CLIENT_TYPE_FRIENDS_FAMILY
     ];
 
     /**
-     * Vérifie si un utilisateur est un particulier (éligible au programme fidélité)
+     * Vérifie si un utilisateur est traité comme un particulier (éligible au programme fidélité)
+     * Inclut les types: personal, friends_family
      */
     public static function isPersonalClient(string $userId): bool
     {
         $user = self::findById($userId);
-        return $user && ($user['client_type'] ?? self::CLIENT_TYPE_PERSONAL) === self::CLIENT_TYPE_PERSONAL;
+        $clientType = $user['client_type'] ?? self::CLIENT_TYPE_PERSONAL;
+        return $user && in_array($clientType, self::PERSONAL_LIKE_TYPES, true);
+    }
+
+    /**
+     * Vérifie si un utilisateur est un Friends & Family
+     */
+    public static function isFriendsFamily(string $userId): bool
+    {
+        $user = self::findById($userId);
+        return $user && ($user['client_type'] ?? self::CLIENT_TYPE_PERSONAL) === self::CLIENT_TYPE_FRIENDS_FAMILY;
     }
 
     /**

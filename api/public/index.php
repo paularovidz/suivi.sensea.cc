@@ -187,13 +187,15 @@ $routes = [
     'POST /bookings/([a-f0-9-]+)/complete' => ['controller' => BookingController::class, 'method' => 'completeSession'],
 
     // ============================================
-    // DOCUMENTS ROUTES (Admin only)
+    // DOCUMENTS ROUTES
     // ============================================
-    'GET /documents/(user|person)/([a-f0-9-]+)' => ['controller' => DocumentController::class, 'method' => 'listByEntity'],
-    'POST /documents/(user|person)/([a-f0-9-]+)' => ['controller' => DocumentController::class, 'method' => 'upload'],
+    'GET /documents/(user|person|session)/([a-f0-9-]+)' => ['controller' => DocumentController::class, 'method' => 'listByEntity'],
+    'POST /documents/(user|person|session)/([a-f0-9-]+)' => ['controller' => DocumentController::class, 'method' => 'upload'],
     'GET /documents/([a-f0-9-]+)/download' => ['controller' => DocumentController::class, 'method' => 'download'],
     'GET /documents/([a-f0-9-]+)/view' => ['controller' => DocumentController::class, 'method' => 'view'],
     'DELETE /documents/([a-f0-9-]+)' => ['controller' => DocumentController::class, 'method' => 'destroy'],
+    'GET /documents/person-sessions/([a-f0-9-]+)' => ['controller' => DocumentController::class, 'method' => 'listByPersonSessions'],
+    'GET /documents/my-sessions' => ['controller' => DocumentController::class, 'method' => 'listMySessionDocuments'],
 
     // ============================================
     // PROMO CODES ROUTES (Admin only)

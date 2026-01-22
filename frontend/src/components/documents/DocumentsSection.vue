@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { documentsApi } from '@/services/api'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import AlertMessage from '@/components/ui/AlertMessage.vue'
@@ -9,7 +9,7 @@ const props = defineProps({
   type: {
     type: String,
     required: true,
-    validator: (v) => ['user', 'person'].includes(v)
+    validator: (v) => ['user', 'person', 'session'].includes(v)
   },
   entityId: {
     type: String,
@@ -18,6 +18,16 @@ const props = defineProps({
   readonly: {
     type: Boolean,
     default: false
+  },
+  // Permet d'autoriser l'upload même si readonly est false (pour les membres sur leur propre compte)
+  canUpload: {
+    type: Boolean,
+    default: null // null = utiliser !readonly par défaut
+  },
+  // ID de l'utilisateur courant pour vérifier s'il peut supprimer un document
+  currentUserId: {
+    type: String,
+    default: null
   },
   title: {
     type: String,
@@ -28,6 +38,30 @@ const props = defineProps({
     default: false
   }
 })
+
+// Détermine si l'utilisateur peut uploader
+const showUploadButton = computed(() => {
+  // Si canUpload est explicitement défini, l'utiliser
+  if (props.canUpload !== null) {
+    return props.canUpload
+  }
+  // Sinon, utiliser !readonly
+  return !props.readonly
+})
+
+// Détermine si l'utilisateur peut supprimer un document spécifique
+function canDeleteDocument(doc) {
+  // Si readonly, personne ne peut supprimer
+  if (props.readonly && !props.currentUserId) {
+    return false
+  }
+  // Si currentUserId est fourni, vérifier si l'utilisateur a uploadé le document
+  if (props.currentUserId) {
+    return doc.uploaded_by === props.currentUserId
+  }
+  // Sinon (mode admin), utiliser !readonly
+  return !props.readonly
+}
 
 const documents = ref([])
 const loading = ref(true)
@@ -198,7 +232,7 @@ function isPdf(mimeType) {
   <div class="card-dark overflow-hidden">
     <div class="card-dark-header flex items-center justify-between">
       <h2 class="font-semibold text-white">{{ title }}</h2>
-      <template v-if="!readonly">
+      <template v-if="showUploadButton">
         <button @click="triggerUpload" class="btn-secondary text-sm" :disabled="uploading">
           <LoadingSpinner v-if="uploading" size="sm" class="mr-2" />
           <svg v-else class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,9 +322,9 @@ function isPdf(mimeType) {
               </svg>
             </button>
 
-            <!-- Delete (admin only) -->
+            <!-- Delete (admin ou utilisateur qui a uploadé) -->
             <button
-              v-if="!readonly"
+              v-if="canDeleteDocument(doc)"
               @click="confirmDelete(doc)"
               class="['p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-900/30"
               title="Supprimer"
@@ -305,7 +339,7 @@ function isPdf(mimeType) {
     </div>
 
     <ConfirmDialog
-      v-if="!readonly"
+      v-if="showUploadButton || currentUserId"
       ref="confirmDialog"
       title="Supprimer ce document ?"
       :message="`Etes-vous sur de vouloir supprimer '${documentToDelete?.original_name}' ? Cette action est irreversible.`"

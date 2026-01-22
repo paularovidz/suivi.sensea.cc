@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import LoyaltyCard from '@/components/loyalty/LoyaltyCard.vue'
 import DocumentsSection from '@/components/documents/DocumentsSection.vue'
+import SessionDocumentsList from '@/components/documents/SessionDocumentsList.vue'
 import ImpersonationBanner from '@/components/ui/ImpersonationBanner.vue'
 
 const router = useRouter()
@@ -23,8 +24,9 @@ const sessionsPagination = ref({ page: 1, total: 0, pages: 0 })
 const persons = computed(() => personsStore.persons)
 
 // Vérifie si l'utilisateur est un particulier (éligible fidélité)
+// Inclut personal et friends_family
 const isPersonalClient = computed(() => {
-  return authStore.user?.client_type === 'personal'
+  return ['personal', 'friends_family'].includes(authStore.user?.client_type)
 })
 
 const selectedPerson = computed(() => {
@@ -172,18 +174,28 @@ async function handleLogout() {
           </a>
         </div>
 
-        <!-- 2. Mes documents -->
+        <!-- 2. Mes documents (compte) -->
         <div v-if="authStore.user?.id" class="mb-6">
           <DocumentsSection
             type="user"
             :entity-id="authStore.user.id"
             title="Mes documents"
-            readonly
+            :can-upload="true"
+            :current-user-id="authStore.user.id"
             dark
           />
         </div>
 
-        <!-- 3. Liste des personnes accompagnées -->
+        <!-- 3. Documents des séances (factures) -->
+        <div class="mb-6">
+          <SessionDocumentsList
+            my-documents
+            title="Factures et documents des séances"
+            show-person-name
+          />
+        </div>
+
+        <!-- 4. Liste des personnes accompagnées -->
         <div class="mb-6">
           <h2 class="text-lg font-semibold text-white mb-4">Personnes accompagnées</h2>
 
@@ -223,7 +235,7 @@ async function handleLogout() {
           </div>
         </div>
 
-        <!-- 4. Carte de fidélité (particuliers uniquement) -->
+        <!-- 5. Carte de fidélité (particuliers uniquement) -->
         <div v-if="isPersonalClient && authStore.user?.id">
           <LoyaltyCard :user-id="authStore.user.id" />
         </div>
@@ -261,14 +273,23 @@ async function handleLogout() {
           </div>
         </div>
 
-        <!-- Documents de la personne -->
+        <!-- Documents de la personne (upload réservé aux admins, mais peut supprimer ses propres uploads) -->
         <div class="mb-6">
           <DocumentsSection
             type="person"
             :entity-id="selectedPersonId"
             :title="`Documents de ${selectedPerson?.first_name}`"
-            readonly
+            :can-upload="false"
+            :current-user-id="authStore.user?.id"
             dark
+          />
+        </div>
+
+        <!-- Documents des séances de la personne -->
+        <div class="mb-6">
+          <SessionDocumentsList
+            :person-id="selectedPersonId"
+            :title="`Factures des séances de ${selectedPerson?.first_name}`"
           />
         </div>
 

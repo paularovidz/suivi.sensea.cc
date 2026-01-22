@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { sessionsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import DocumentsSection from '@/components/documents/DocumentsSection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -257,6 +258,16 @@ async function handleLogout() {
             <h3 class="font-semibold text-white mb-2">Expression de la personne</h3>
             <p class="text-gray-300 text-sm whitespace-pre-wrap">{{ session.person_expression }}</p>
           </div>
+        </div>
+
+        <!-- Documents (factures, etc.) -->
+        <div class="mt-6">
+          <DocumentsSection
+            type="session"
+            :entity-id="session.id"
+            title="Documents (factures, etc.)"
+            readonly
+          />
         </div>
 
         <!-- Créé par -->

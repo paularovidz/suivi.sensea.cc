@@ -360,7 +360,12 @@ class PromoCode
         // Vérifier le type de client
         if (!empty($promo['target_client_type']) && $clientType !== null) {
             if ($promo['target_client_type'] !== $clientType) {
-                $label = $promo['target_client_type'] === 'personal' ? 'particuliers' : 'associations';
+                $labels = [
+                    'personal' => 'particuliers',
+                    'association' => 'associations',
+                    'friends_family' => 'Friends & Family'
+                ];
+                $label = $labels[$promo['target_client_type']] ?? $promo['target_client_type'];
                 return ['valid' => false, 'error' => "Ce code promo est réservé aux {$label}"];
             }
         }

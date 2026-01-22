@@ -41,8 +41,14 @@ const statusClasses = {
   no_show: 'bg-gray-100 text-gray-800 border-gray-300'
 }
 
+const clientTypeLabels = {
+  personal: 'Particulier',
+  association: 'Association',
+  friends_family: 'Friends & Family'
+}
+
 const clientTypeLabel = computed(() => {
-  return props.booking?.client_type === 'association' ? 'Association' : 'Particulier'
+  return clientTypeLabels[props.booking?.client_type] || 'Particulier'
 })
 
 const durationLabel = computed(() => {

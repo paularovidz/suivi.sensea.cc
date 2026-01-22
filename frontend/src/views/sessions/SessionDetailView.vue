@@ -283,20 +283,13 @@ function getAppreciationBadgeClass(appreciation) {
         </div>
       </div>
 
-      <!-- Documents (admin only) - attached to the person -->
-      <div v-if="authStore.isAdmin" class="space-y-2">
-        <p class="text-sm text-gray-400">
-          Documents joints à
-          <RouterLink :to="`/app/persons/${session.person_id}`" class="text-primary-400 hover:underline">
-            {{ session.person_first_name }} {{ session.person_last_name }}
-          </RouterLink>
-          (factures, etc.)
-        </p>
-        <DocumentsSection
-          type="person"
-          :entity-id="session.person_id"
-        />
-      </div>
+      <!-- Documents de la séance (admin only) -->
+      <DocumentsSection
+        v-if="authStore.isAdmin"
+        type="session"
+        :entity-id="session.id"
+        title="Documents (factures, etc.)"
+      />
     </template>
 
     <ConfirmDialog

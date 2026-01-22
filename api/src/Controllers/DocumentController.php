@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Models\Document;
 use App\Models\User;
 use App\Models\Person;
+use App\Models\Session;
 use App\Middleware\AuthMiddleware;
 use App\Services\AuditService;
 use App\Utils\Response;
@@ -30,6 +31,13 @@ class DocumentController
         if ($type === 'user') {
             // L'utilisateur peut voir ses propres documents
             return $currentUser['id'] === $id;
+        } elseif ($type === 'session') {
+            // L'utilisateur peut voir les documents des séances dont la personne lui est assignée
+            $session = Session::findById($id);
+            if (!$session || empty($session['person_id'])) {
+                return false;
+            }
+            return Person::isAssignedToUser($session['person_id'], $currentUser['id']);
         } else {
             // L'utilisateur peut voir les documents des personnes qui lui sont assignées
             return Person::isAssignedToUser($id, $currentUser['id']);
@@ -54,6 +62,8 @@ class DocumentController
         // Vérifier que l'entité existe
         if ($type === 'user') {
             $entity = User::findById($id);
+        } elseif ($type === 'session') {
+            $entity = Session::findById($id);
         } else {
             $entity = Person::findById($id);
         }
@@ -77,10 +87,21 @@ class DocumentController
 
     /**
      * Upload un document
+     * - Admin: peut uploader pour n'importe quelle entité
+     * - Utilisateur: peut uploader uniquement sur son propre compte (type=user, id=son id)
      */
     public function upload(string $type, string $id): void
     {
-        AuthMiddleware::requireAdmin();
+        AuthMiddleware::handle();
+
+        $currentUser = AuthMiddleware::getCurrentUser();
+        $isAdmin = AuthMiddleware::isAdmin();
+
+        // Vérifier les droits d'upload
+        // Admin peut tout, utilisateur peut uploader sur son propre compte uniquement
+        if (!$isAdmin && !($type === 'user' && $currentUser['id'] === $id)) {
+            Response::forbidden('Accès non autorisé');
+        }
 
         // Valider le type
         if (!in_array($type, Document::DOCUMENTABLE_TYPES)) {
@@ -90,6 +111,8 @@ class DocumentController
         // Vérifier que l'entité existe
         if ($type === 'user') {
             $entity = User::findById($id);
+        } elseif ($type === 'session') {
+            $entity = Session::findById($id);
         } else {
             $entity = Person::findById($id);
         }
@@ -256,15 +279,26 @@ class DocumentController
 
     /**
      * Supprime un document
+     * - Admin: peut supprimer n'importe quel document
+     * - Utilisateur: peut supprimer uniquement les documents qu'il a uploadés lui-même
      */
     public function destroy(string $id): void
     {
-        AuthMiddleware::requireAdmin();
+        AuthMiddleware::handle();
+
+        $currentUser = AuthMiddleware::getCurrentUser();
+        $isAdmin = AuthMiddleware::isAdmin();
 
         $document = Document::findById($id);
 
         if (!$document) {
             Response::notFound('Document non trouvé');
+        }
+
+        // Vérifier les droits de suppression
+        // Admin peut tout supprimer, utilisateur peut supprimer uniquement ses propres uploads
+        if (!$isAdmin && $document['uploaded_by'] !== $currentUser['id']) {
+            Response::forbidden('Vous ne pouvez supprimer que les documents que vous avez uploadés');
         }
 
         // Supprimer le fichier du disque
@@ -291,5 +325,51 @@ class DocumentController
         );
 
         Response::success(null, 'Document supprimé');
+    }
+
+    /**
+     * Liste tous les documents des séances d'une personne
+     */
+    public function listByPersonSessions(string $personId): void
+    {
+        AuthMiddleware::handle();
+
+        $currentUser = AuthMiddleware::getCurrentUser();
+        $isAdmin = AuthMiddleware::isAdmin();
+
+        // Vérifier que la personne existe
+        $person = Person::findById($personId);
+        if (!$person) {
+            Response::notFound('Personne non trouvée');
+        }
+
+        // Vérifier l'accès
+        if (!$isAdmin && !Person::isAssignedToUser($personId, $currentUser['id'])) {
+            Response::forbidden('Accès non autorisé');
+        }
+
+        $documents = Document::findByPersonSessions($personId);
+
+        Response::success([
+            'documents' => $documents,
+            'count' => count($documents)
+        ]);
+    }
+
+    /**
+     * Liste tous les documents des séances de l'utilisateur connecté (ses personnes assignées)
+     */
+    public function listMySessionDocuments(): void
+    {
+        AuthMiddleware::handle();
+
+        $currentUser = AuthMiddleware::getCurrentUser();
+
+        $documents = Document::findByUserPersonsSessions($currentUser['id']);
+
+        Response::success([
+            'documents' => $documents,
+            'count' => count($documents)
+        ]);
     }
 }

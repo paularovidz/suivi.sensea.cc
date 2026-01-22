@@ -33,6 +33,8 @@ const form = ref({
 
 const users = ref([])
 const loadingUsers = ref(false)
+const userSearch = ref('')
+const showUserDropdown = ref(false)
 
 const discountTypes = [
   { value: 'percentage', label: 'Pourcentage', icon: '%' },
@@ -48,7 +50,8 @@ const applicationModes = [
 const clientTypes = [
   { value: '', label: 'Tous les clients' },
   { value: 'personal', label: 'Particuliers uniquement' },
-  { value: 'association', label: 'Associations uniquement' }
+  { value: 'association', label: 'Associations uniquement' },
+  { value: 'friends_family', label: 'Friends & Family uniquement' }
 ]
 
 onMounted(async () => {
@@ -174,6 +177,41 @@ const discountValueLabel = computed(() => {
 const discountValueMax = computed(() => {
   return form.value.discount_type === 'percentage' ? 100 : 9999
 })
+
+// User search and selection
+const filteredUsers = computed(() => {
+  if (!userSearch.value) return users.value
+  const search = userSearch.value.toLowerCase()
+  return users.value.filter(u =>
+    u.first_name.toLowerCase().includes(search) ||
+    u.last_name.toLowerCase().includes(search) ||
+    u.email.toLowerCase().includes(search) ||
+    `${u.first_name} ${u.last_name}`.toLowerCase().includes(search)
+  )
+})
+
+const selectedUser = computed(() => {
+  if (!form.value.target_user_id) return null
+  return users.value.find(u => u.id === form.value.target_user_id)
+})
+
+function selectUser(user) {
+  form.value.target_user_id = user.id
+  userSearch.value = ''
+  showUserDropdown.value = false
+}
+
+function clearSelectedUser() {
+  form.value.target_user_id = ''
+  userSearch.value = ''
+}
+
+function handleUserSearchBlur() {
+  // Delay to allow click on dropdown item
+  setTimeout(() => {
+    showUserDropdown.value = false
+  }, 200)
+}
 </script>
 
 <template>
@@ -413,16 +451,85 @@ const discountValueMax = computed(() => {
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Utilisateur spécifique</label>
-            <select
-              v-model="form.target_user_id"
-              class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-primary-500"
-              :disabled="loadingUsers"
-            >
-              <option value="">Tous les utilisateurs</option>
-              <option v-for="user in users" :key="user.id" :value="user.id">
-                {{ user.first_name }} {{ user.last_name }} ({{ user.email }})
-              </option>
-            </select>
+
+            <!-- Selected user display -->
+            <div v-if="selectedUser" class="flex items-center justify-between px-4 py-2 bg-indigo-500/20 border border-indigo-500/50 rounded-lg mb-2">
+              <div class="flex items-center">
+                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-medium mr-3">
+                  {{ selectedUser.first_name.charAt(0) }}{{ selectedUser.last_name.charAt(0) }}
+                </div>
+                <div>
+                  <div class="text-white font-medium">{{ selectedUser.first_name }} {{ selectedUser.last_name }}</div>
+                  <div class="text-xs text-gray-400">{{ selectedUser.email }}</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                @click="clearSelectedUser"
+                class="p-1 text-gray-400 hover:text-white rounded transition-colors"
+                title="Retirer"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Search input -->
+            <div v-else class="relative">
+              <input
+                v-model="userSearch"
+                type="text"
+                @focus="showUserDropdown = true"
+                @blur="handleUserSearchBlur"
+                :disabled="loadingUsers"
+                placeholder="Rechercher un utilisateur..."
+                class="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500"
+              />
+              <svg class="w-5 h-5 text-gray-400 absolute right-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+
+              <!-- Dropdown list -->
+              <div
+                v-if="showUserDropdown && !loadingUsers"
+                class="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+              >
+                <div
+                  v-if="filteredUsers.length === 0"
+                  class="px-4 py-3 text-sm text-gray-400"
+                >
+                  {{ userSearch ? 'Aucun utilisateur trouvé' : 'Commencez à taper pour rechercher...' }}
+                </div>
+                <button
+                  v-for="user in filteredUsers"
+                  :key="user.id"
+                  type="button"
+                  @mousedown.prevent="selectUser(user)"
+                  class="w-full flex items-center px-4 py-2 hover:bg-gray-700 text-left transition-colors"
+                >
+                  <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-sm font-medium mr-3">
+                    {{ user.first_name.charAt(0) }}{{ user.last_name.charAt(0) }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-white font-medium truncate">{{ user.first_name }} {{ user.last_name }}</div>
+                    <div class="text-xs text-gray-400 truncate">{{ user.email }}</div>
+                  </div>
+                  <span
+                    v-if="user.client_type"
+                    :class="[
+                      'ml-2 px-2 py-0.5 text-xs rounded',
+                      user.client_type === 'association' ? 'bg-violet-500/20 text-violet-300' :
+                      user.client_type === 'friends_family' ? 'bg-amber-500/20 text-amber-300' :
+                      'bg-gray-600 text-gray-300'
+                    ]"
+                  >
+                    {{ user.client_type === 'association' ? 'Asso' : user.client_type === 'friends_family' ? 'F&F' : 'Part.' }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
             <p class="mt-1 text-xs text-gray-500">Réservez cette promotion à un client spécifique</p>
           </div>
         </div>

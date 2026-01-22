@@ -74,7 +74,8 @@ function formatDate(dateString) {
 
 const clientTypeLabels = {
   personal: 'Particulier',
-  association: 'Association'
+  association: 'Association',
+  friends_family: 'Friends & Family'
 }
 
 const roleLabels = {
@@ -83,7 +84,8 @@ const roleLabels = {
 }
 
 const isPersonalClient = computed(() => {
-  return user.value?.client_type === 'personal'
+  // Friends & Family are treated like personal clients (eligible for loyalty)
+  return ['personal', 'friends_family'].includes(user.value?.client_type)
 })
 </script>
 

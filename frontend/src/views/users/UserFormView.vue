@@ -30,6 +30,12 @@ const form = ref({
 
 const isAssociation = computed(() => form.value.client_type === 'association')
 
+const clientTypes = [
+  { value: 'personal', label: 'Particulier' },
+  { value: 'association', label: 'Association' },
+  { value: 'friends_family', label: 'Friends & Family' }
+]
+
 const assignedPersons = ref([])
 const personSearch = ref('')
 
@@ -206,8 +212,9 @@ function cancel() {
             <div>
               <label for="client_type" class="block text-sm font-medium text-gray-300 mb-1">Type de client *</label>
               <select id="client_type" v-model="form.client_type" class="w-full px-4 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                <option value="personal">Particulier</option>
-                <option value="association">Association</option>
+                <option v-for="type in clientTypes" :key="type.value" :value="type.value">
+                  {{ type.label }}
+                </option>
               </select>
             </div>
           </div>

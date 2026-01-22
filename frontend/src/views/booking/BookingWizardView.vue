@@ -142,7 +142,7 @@ async function initForAuthenticatedUser() {
     first_name: user.first_name,
     last_name: user.last_name,
     client_type: user.client_type || 'personal',
-    client_type_label: user.client_type === 'association' ? 'Association' : 'Particulier',
+    client_type_label: { personal: 'Particulier', association: 'Association', friends_family: 'Friends & Family' }[user.client_type] || 'Particulier',
     company_name: user.company_name || null,
     has_company: !!user.company_name
   }
