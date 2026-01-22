@@ -43,6 +43,37 @@ class ICSGeneratorService
     }
 
     /**
+     * Génère une invitation calendrier (avec METHOD:REQUEST)
+     * Les clients mail (Gmail, Outlook) afficheront les boutons Accepter/Refuser
+     */
+    public static function generateCalendarInvitation(array $booking, array $attendees): string
+    {
+        $timezone = self::env('APP_TIMEZONE', 'Europe/Paris');
+        $startDate = new \DateTime($booking['session_date'], new \DateTimeZone($timezone));
+        $endDate = (clone $startDate)->modify("+{$booking['duration_blocked_minutes']} minutes");
+
+        $summary = self::buildSummary($booking, $startDate);
+        $description = self::buildDescription($booking);
+        $uid = $booking['id'] . '@' . parse_url(self::env('APP_URL', 'sensea.cc'), PHP_URL_HOST);
+
+        $ics = self::buildICS([
+            'uid' => $uid,
+            'summary' => $summary,
+            'description' => $description,
+            'start' => $startDate,
+            'end' => $endDate,
+            'timezone' => $timezone,
+            'location' => 'sensëa Snoezelen',
+            'organizer_email' => self::env('MAIL_FROM', 'noreply@sensea.cc'),
+            'organizer_name' => 'sensëa Snoezelen',
+            'method' => 'REQUEST',
+            'attendees' => $attendees
+        ]);
+
+        return $ics;
+    }
+
+    /**
      * Génère un fichier ICS avec plusieurs événements
      */
     public static function generateCalendarFile(array $bookings): string
@@ -142,12 +173,14 @@ class ICSGeneratorService
      */
     private static function buildICS(array $event): string
     {
+        $method = $event['method'] ?? 'PUBLISH';
+
         $lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
             'PRODID:-//sensëa Snoezelen//Booking System//FR',
             'CALSCALE:GREGORIAN',
-            'METHOD:PUBLISH',
+            'METHOD:' . $method,
             'X-WR-CALNAME:sensëa Snoezelen',
             'X-WR-TIMEZONE:' . $event['timezone'],
             '',
@@ -169,6 +202,15 @@ class ICSGeneratorService
         if (!empty($event['organizer_email'])) {
             $name = $event['organizer_name'] ?? 'sensëa';
             $lines[] = 'ORGANIZER;CN=' . self::escapeValue($name) . ':mailto:' . $event['organizer_email'];
+        }
+
+        // Ajouter les participants pour les invitations (METHOD:REQUEST)
+        if (!empty($event['attendees']) && $method === 'REQUEST') {
+            foreach ($event['attendees'] as $attendee) {
+                $attendeeName = $attendee['name'] ?? '';
+                $attendeeEmail = $attendee['email'];
+                $lines[] = 'ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=' . self::escapeValue($attendeeName) . ':mailto:' . $attendeeEmail;
+            }
         }
 
         $lines[] = 'STATUS:CONFIRMED';

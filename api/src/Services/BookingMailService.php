@@ -89,9 +89,9 @@ class BookingMailService
     }
 
     /**
-     * Envoie la notification aux administrateurs avec le fichier ICS
+     * Envoie la notification aux administrateurs (sans ICS - déjà synchronisé via Google Calendar)
      */
-    public function sendAdminNotification(array $booking, string $icsContent): bool
+    public function sendAdminNotification(array $booking): bool
     {
         try {
             $admins = $this->getAdminEmails();
@@ -103,7 +103,6 @@ class BookingMailService
             $this->mailer->clearAddresses();
             $this->mailer->clearAttachments();
 
-            // Ajouter tous les admins de la base de données
             foreach ($admins as $admin) {
                 $this->mailer->addAddress($admin['email'], "{$admin['first_name']} {$admin['last_name']}");
             }
@@ -112,9 +111,6 @@ class BookingMailService
 
             $dateFormatted = (new \DateTime($booking['session_date']))->format('d/m/Y à H:i');
             $this->mailer->Subject = "Nouvelle réservation - {$booking['person_first_name']} {$booking['person_last_name']} - {$dateFormatted}";
-
-            // Attacher le fichier ICS
-            $this->mailer->addStringAttachment($icsContent, 'reservation.ics', 'base64', 'text/calendar');
 
             $this->mailer->Body = $this->getAdminNotificationHtml($booking);
             $this->mailer->AltBody = $this->getAdminNotificationText($booking);
@@ -179,6 +175,7 @@ class BookingMailService
 
     /**
      * Envoie l'email de confirmation finale (après clic sur le lien)
+     * Inclut une invitation calendrier native (boutons Accepter/Refuser dans Gmail, Outlook, etc.)
      */
     public function sendBookingConfirmedEmail(array $booking): bool
     {
@@ -187,9 +184,14 @@ class BookingMailService
             $this->mailer->clearAttachments();
             $this->mailer->addAddress($booking['client_email'], "{$booking['client_first_name']} {$booking['client_last_name']}");
 
-            // Attacher le fichier ICS
-            $icsContent = ICSGeneratorService::generateBookingEvent($booking);
-            $this->mailer->addStringAttachment($icsContent, 'rendez-vous-sensea.ics', 'base64', 'text/calendar');
+            // Générer l'invitation calendrier (METHOD:REQUEST pour avoir Accepter/Refuser)
+            $attendee = [
+                ['email' => $booking['client_email'], 'name' => "{$booking['client_first_name']} {$booking['client_last_name']}"]
+            ];
+            $icsContent = ICSGeneratorService::generateCalendarInvitation($booking, $attendee);
+
+            // Envoyer comme invitation calendrier native (pas en pièce jointe)
+            $this->mailer->Ical = $icsContent;
 
             $this->mailer->isHTML(true);
             $this->mailer->Subject = 'Rendez-vous confirmé - sensëa Snoezelen';
@@ -385,9 +387,6 @@ TEXT;
             </tr>
         </table>
 
-        <p style="margin-top: 20px; color: #666;">
-            Le fichier .ics est joint à cet email pour l'ajouter à votre calendrier.
-        </p>
     </div>
 </body>
 </html>
@@ -412,8 +411,6 @@ Email : {$booking['client_email']}
 Téléphone : {$booking['client_phone']}
 
 Statut : En attente de confirmation client
-
-Le fichier .ics est joint pour ajout au calendrier.
 TEXT;
     }
 
@@ -591,7 +588,7 @@ TEXT;
                             </div>
 
                             <p style="margin: 0; font-size: 14px; color: #888;">
-                                Un fichier calendrier (.ics) est joint à cet email pour l'ajouter à votre agenda.<br><br>
+                                Cet email contient une invitation calendrier. Vous pouvez l'accepter directement depuis Gmail, Outlook ou votre application mail.<br><br>
                                 À bientôt !<br>
                                 L'équipe sensëa Snoezelen
                             </p>
@@ -624,7 +621,7 @@ Pour : {$booking['person_first_name']} {$booking['person_last_name']}
 
 CONSEIL : Pensez à vous habiller confortablement pour la séance, idéalement une tenue de sport ou des vêtements souples.
 
-Un fichier calendrier (.ics) est joint à cet email.
+Cet email contient une invitation calendrier que vous pouvez accepter depuis votre application mail.
 
 À bientôt !
 L'équipe sensëa Snoezelen

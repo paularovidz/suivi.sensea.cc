@@ -604,9 +604,8 @@ class PublicBookingController
             }
         }
 
-        // Envoyer la notification aux admins
-        $icsContent = ICSGeneratorService::generateBookingEvent($booking);
-        $mailService->sendAdminNotification($booking, $icsContent);
+        // Envoyer l'invitation calendrier aux admins
+        $mailService->sendAdminNotification($booking);
 
         Response::success([
             'id' => $sessionId,
