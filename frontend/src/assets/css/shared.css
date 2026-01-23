@@ -1,0 +1,206 @@
+/* ==========================================================================
+   SHARED COMPONENTS - Used across all sections
+   Buttons, Inputs, Cards, Basic utilities
+   ========================================================================== */
+
+@layer components {
+  /* ==========================================================================
+     BUTTONS
+     ========================================================================== */
+
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn text-white hover:opacity-90 focus:ring-sensea;
+    background: var(--sensea-cta-gradient);
+  }
+
+  .btn-secondary {
+    @apply btn bg-gray-700 text-gray-200 border border-gray-600 hover:bg-gray-600 focus:ring-gray-500;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  /* ==========================================================================
+     INPUTS
+     ========================================================================== */
+
+  .input {
+    @apply w-full px-4 py-2 text-sm border border-gray-600 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sensea focus:border-transparent transition-shadow duration-200;
+  }
+
+  select.input {
+    @apply bg-gray-700 text-gray-100;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  select.input option {
+    @apply bg-gray-700 text-gray-100;
+  }
+
+  textarea.input {
+    @apply bg-gray-700 text-gray-100;
+  }
+
+  input[type="date"].input,
+  input[type="time"].input,
+  input[type="datetime-local"].input {
+    @apply bg-gray-700 text-gray-100;
+    color-scheme: dark;
+  }
+
+  input[type="date"].input::-webkit-calendar-picker-indicator,
+  input[type="time"].input::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"].input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+
+  .input-error {
+    @apply border-red-500 focus:ring-red-500;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-300 mb-1;
+  }
+
+  /* ==========================================================================
+     CARDS
+     ========================================================================== */
+
+  .card {
+    @apply bg-gray-800 rounded-xl shadow-sm border border-gray-700;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-700;
+  }
+
+  .card-body {
+    @apply p-6;
+  }
+
+  /* ==========================================================================
+     BASIC BADGES
+     ========================================================================== */
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply badge bg-purple-100 text-purple-800;
+  }
+
+  .badge-success {
+    @apply badge bg-green-100 text-green-800;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-100 text-yellow-800;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-100 text-red-800;
+  }
+
+  .badge-gray {
+    @apply badge bg-gray-100 text-gray-800;
+  }
+}
+
+@layer utilities {
+  /* ==========================================================================
+     GRADIENT UTILITIES
+     ========================================================================== */
+
+  .gradient-sensea {
+    background: var(--sensea-cta-gradient);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background: var(--sensea-cta-gradient);
+  }
+
+  .bg-sensea-gradient {
+    background: var(--sensea-gradient);
+  }
+
+  /* ==========================================================================
+     DARK MODE UTILITIES
+     ========================================================================== */
+
+  .bg-dark {
+    @apply bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900;
+  }
+
+  .card-dark {
+    @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl;
+  }
+
+  .card-dark-header {
+    @apply px-6 py-4 border-b border-gray-700/50;
+  }
+
+  .card-dark-body {
+    @apply p-6;
+  }
+
+  .card-dark-interactive {
+    @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl transition-all hover:border-sensea/50 hover:bg-gray-800/70;
+  }
+
+  .header-dark {
+    @apply bg-gray-800/50 backdrop-blur-sm border-b border-gray-700/50;
+  }
+
+  .input-dark {
+    @apply w-full px-4 py-2 text-sm bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sensea focus:border-transparent transition-shadow duration-200;
+  }
+
+  /* Dark mode badges */
+  .badge-dark-success {
+    @apply badge bg-green-900/50 text-green-300;
+  }
+
+  .badge-dark-warning {
+    @apply badge bg-amber-900/50 text-amber-300;
+  }
+
+  .badge-dark-danger {
+    @apply badge bg-red-900/50 text-red-300;
+  }
+
+  .badge-dark-gray {
+    @apply badge bg-gray-700 text-gray-300;
+  }
+
+  /* Dark mode button variants */
+  .btn-dark-primary {
+    @apply btn text-white hover:opacity-90 focus:ring-sensea;
+    background: var(--sensea-cta-gradient);
+  }
+
+  .btn-dark-secondary {
+    @apply btn bg-gray-700 text-gray-200 border border-gray-600 hover:bg-gray-600 focus:ring-gray-500;
+  }
+}

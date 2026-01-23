@@ -1,0 +1,57 @@
+/* ==========================================================================
+   MEMBER CSS - Client account specific styles
+   Profile cards, loyalty display, session history
+   Imported AFTER base.css via main.css
+   ========================================================================== */
+
+/* ==========================================================================
+   SENSORY TYPE BADGES (for session history)
+   ========================================================================== */
+
+.badge-tactile {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800;
+}
+
+.badge-visual {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800;
+}
+
+.badge-olfactory {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800;
+}
+
+.badge-gustatory {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800;
+}
+
+.badge-auditory {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800;
+}
+
+.badge-proprioceptive {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-800;
+}
+
+.badge-vestibular {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800;
+}
+
+/* ==========================================================================
+   LOYALTY CARD UTILITIES
+   ========================================================================== */
+
+.loyalty-stamp {
+  @apply w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200;
+}
+
+.loyalty-stamp-filled {
+  @apply bg-sensea text-white;
+}
+
+.loyalty-stamp-empty {
+  @apply bg-gray-700 border-2 border-dashed border-gray-600;
+}
+
+.loyalty-stamp-free {
+  @apply bg-green-600 text-white animate-pulse;
+}

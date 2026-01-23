@@ -1,57 +1,61 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
-// Layouts
+// Layouts - imported statically (small, always needed)
 import AuthLayout from '@/components/layout/AuthLayout.vue'
 import DashboardLayout from '@/components/layout/DashboardLayout.vue'
-
-// Auth Views
-import LoginView from '@/views/auth/LoginView.vue'
-import VerifyView from '@/views/auth/VerifyView.vue'
-
-// Dashboard Views
-import DashboardView from '@/views/dashboard/DashboardView.vue'
-
-// Member Views
-import MemberView from '@/views/member/MemberView.vue'
-import MemberPersonDetailView from '@/views/member/MemberPersonDetailView.vue'
-import MemberSessionDetailView from '@/views/member/MemberSessionDetailView.vue'
-
-// Persons Views
-import PersonsListView from '@/views/persons/PersonsListView.vue'
-import PersonDetailView from '@/views/persons/PersonDetailView.vue'
-import PersonFormView from '@/views/persons/PersonFormView.vue'
-
-// Sessions Views
-import SessionsListView from '@/views/sessions/SessionsListView.vue'
-import SessionDetailView from '@/views/sessions/SessionDetailView.vue'
-import SessionFormView from '@/views/sessions/SessionFormView.vue'
-
-// Proposals Views
-import ProposalsListView from '@/views/proposals/ProposalsListView.vue'
-
-// Users Views
-import UsersListView from '@/views/users/UsersListView.vue'
-import UserDetailView from '@/views/users/UserDetailView.vue'
-import UserFormView from '@/views/users/UserFormView.vue'
-
-// Settings Views
-import SettingsView from '@/views/settings/SettingsView.vue'
-
-// Promo Codes Views
-import PromoCodesListView from '@/views/promo-codes/PromoCodesListView.vue'
-import PromoCodeFormView from '@/views/promo-codes/PromoCodeFormView.vue'
-import PromoCodeDetailView from '@/views/promo-codes/PromoCodeDetailView.vue'
-
-// Agenda View
-import AgendaView from '@/views/agenda/AgendaView.vue'
-
-// Booking Views (public)
 import BookingLayout from '@/components/layout/BookingLayout.vue'
-import BookingWizardView from '@/views/booking/BookingWizardView.vue'
-import BookingConfirmView from '@/views/booking/BookingConfirmView.vue'
-import BookingCancelView from '@/views/booking/BookingCancelView.vue'
-import BookingEmbedView from '@/views/booking/BookingEmbedView.vue'
+
+// ============================================
+// LAZY LOADED VIEWS - Enables CSS code splitting
+// ============================================
+
+// Auth Views (small bundle)
+const LoginView = () => import('@/views/auth/LoginView.vue')
+const VerifyView = () => import('@/views/auth/VerifyView.vue')
+
+// Member Views (member bundle)
+const MemberView = () => import('@/views/member/MemberView.vue')
+const MemberPersonDetailView = () => import('@/views/member/MemberPersonDetailView.vue')
+const MemberSessionDetailView = () => import('@/views/member/MemberSessionDetailView.vue')
+
+// Dashboard Views (dashboard bundle)
+const DashboardView = () => import('@/views/dashboard/DashboardView.vue')
+
+// Persons Views (dashboard bundle)
+const PersonsListView = () => import('@/views/persons/PersonsListView.vue')
+const PersonDetailView = () => import('@/views/persons/PersonDetailView.vue')
+const PersonFormView = () => import('@/views/persons/PersonFormView.vue')
+
+// Sessions Views (dashboard bundle)
+const SessionsListView = () => import('@/views/sessions/SessionsListView.vue')
+const SessionDetailView = () => import('@/views/sessions/SessionDetailView.vue')
+const SessionFormView = () => import('@/views/sessions/SessionFormView.vue')
+
+// Proposals Views (dashboard bundle)
+const ProposalsListView = () => import('@/views/proposals/ProposalsListView.vue')
+
+// Users Views (dashboard bundle)
+const UsersListView = () => import('@/views/users/UsersListView.vue')
+const UserDetailView = () => import('@/views/users/UserDetailView.vue')
+const UserFormView = () => import('@/views/users/UserFormView.vue')
+
+// Settings Views (dashboard bundle)
+const SettingsView = () => import('@/views/settings/SettingsView.vue')
+
+// Promo Codes Views (dashboard bundle)
+const PromoCodesListView = () => import('@/views/promo-codes/PromoCodesListView.vue')
+const PromoCodeFormView = () => import('@/views/promo-codes/PromoCodeFormView.vue')
+const PromoCodeDetailView = () => import('@/views/promo-codes/PromoCodeDetailView.vue')
+
+// Agenda View (dashboard bundle)
+const AgendaView = () => import('@/views/agenda/AgendaView.vue')
+
+// Booking Views (booking bundle - public)
+const BookingWizardView = () => import('@/views/booking/BookingWizardView.vue')
+const BookingConfirmView = () => import('@/views/booking/BookingConfirmView.vue')
+const BookingCancelView = () => import('@/views/booking/BookingCancelView.vue')
+const BookingEmbedView = () => import('@/views/booking/BookingEmbedView.vue')
 
 const routes = [
   // Auth routes

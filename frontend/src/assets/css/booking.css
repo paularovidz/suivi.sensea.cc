@@ -1,0 +1,57 @@
+/* ==========================================================================
+   BOOKING CSS - Public booking wizard styles
+   Wizard UI, progress bars, calendar picker
+   Imported AFTER base.css via main.css
+   ========================================================================== */
+
+/* ==========================================================================
+   SENSORY TYPE BADGES (for booking summary)
+   ========================================================================== */
+
+.badge-tactile {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800;
+}
+
+.badge-visual {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800;
+}
+
+.badge-olfactory {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800;
+}
+
+.badge-gustatory {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800;
+}
+
+.badge-auditory {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800;
+}
+
+.badge-proprioceptive {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-800;
+}
+
+.badge-vestibular {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800;
+}
+
+/* ==========================================================================
+   WIZARD SPECIFIC UTILITIES
+   ========================================================================== */
+
+.booking-step-indicator {
+  @apply flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors duration-200;
+}
+
+.booking-step-active {
+  @apply bg-sensea text-white;
+}
+
+.booking-step-completed {
+  @apply bg-green-600 text-white;
+}
+
+.booking-step-pending {
+  @apply bg-gray-700 text-gray-400;
+}

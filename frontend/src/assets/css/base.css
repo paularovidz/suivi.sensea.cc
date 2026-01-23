@@ -1,0 +1,160 @@
+/* ==========================================================================
+   BASE CSS - Fonts, Variables, Tailwind Base
+   Shared across ALL sections (dashboard, booking, member)
+   ========================================================================== */
+
+/* ==========================================================================
+   FONTS
+   ========================================================================== */
+
+/* Amandine - Logo only (subset: sensëa) */
+@font-face {
+  font-family: 'Amandine';
+  src: url('/fonts/amandine-subset.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Syne - Titles */
+@font-face {
+  font-family: 'Syne';
+  src: url('/fonts/Syne-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Syne';
+  src: url('/fonts/Syne-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Syne';
+  src: url('/fonts/Syne-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Satoshi - Body Text */
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ==========================================================================
+   CSS CUSTOM PROPERTIES
+   ========================================================================== */
+
+:root {
+  /* Brand Colors */
+  --sensea-primary: #721ad6;
+  --sensea-primary-light: #9333ea;
+  --sensea-primary-dark: #5b14a8;
+
+  /* Gradients */
+  --sensea-gradient: linear-gradient(82.48deg, transparent -1.1%, rgba(114, 26, 214, 0.36) 96.45%);
+  --sensea-cta-gradient: linear-gradient(to right, var(--sensea-primary-light), var(--sensea-primary));
+
+  /* Typography */
+  --font-logo: 'Amandine', system-ui, sans-serif;
+  --font-heading: 'Syne', system-ui, sans-serif;
+  --font-body: 'Satoshi', system-ui, sans-serif;
+}
+
+/* ==========================================================================
+   TAILWIND DIRECTIVES
+   ========================================================================== */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Logo font utility */
+.font-logo {
+  font-family: 'Amandine', system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    @apply text-gray-100;
+    font-family: var(--font-body);
+  }
+
+  body {
+    @apply min-h-screen bg-gray-900;
+  }
+
+  /* Headings use Syne */
+  h1, h2, h3 {
+    font-family: var(--font-heading);
+  }
+}
+
+/* ==========================================================================
+   CUSTOM SCROLLBAR (dark theme)
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #374151;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* ==========================================================================
+   VUE TRANSITIONS
+   ========================================================================== */
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.slide-enter-from {
+  transform: translateX(-20px);
+  opacity: 0;
+}
+
+.slide-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}

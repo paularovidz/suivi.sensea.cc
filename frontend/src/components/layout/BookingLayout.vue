@@ -1,3 +1,16 @@
+<script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import ImpersonationBanner from '@/components/ui/ImpersonationBanner.vue'
+
+const route = useRoute()
+
+// Check if we're in embed mode (via query param or route meta)
+const isEmbed = computed(() => {
+  return route.query.embed === 'true' || route.meta.embed === true
+})
+</script>
+
 <template>
   <div class="min-h-screen bg-dark">
     <!-- Impersonation Banner (above header) -->
@@ -23,16 +36,3 @@
     </main>
   </div>
 </template>
-
-<script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import ImpersonationBanner from '@/components/ui/ImpersonationBanner.vue'
-
-const route = useRoute()
-
-// Check if we're in embed mode (via query param or route meta)
-const isEmbed = computed(() => {
-  return route.query.embed === 'true' || route.meta.embed === true
-})
-</script>
