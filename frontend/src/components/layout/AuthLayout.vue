@@ -17,19 +17,9 @@
     <div class="w-full max-w-5xl relative z-10">
       <!-- Logo -->
       <div class="lg:text-left mb-8 lg:mb-12">
-        <div class="inline-flex items-center gap-4">
-          <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg shadow-purple-500/25">
-            <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke-linecap="round"/>
-              <path d="M12 6v6l4 2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight">
-              sensëa
-            </h1>
-            <p class="text-gray-500 text-sm">Suivi des séances Snoezelen</p>
-          </div>
+        <div>
+          <span class="text-3xl font-logo text-white">sensëa</span>
+          <p class="text-gray-500 text-sm">Suivi des séances Snoezelen</p>
         </div>
       </div>
 

@@ -11,7 +11,7 @@
       <div v-if="!hideTitle" class="text-center mb-6">
         <h1
           class="text-xl font-semibold"
-          :style="{ color: primaryColor || '#4f46e5' }"
+          :style="{ color: primaryColor || '#721ad6' }"
         >
           Réservation de séance
         </h1>
@@ -68,7 +68,7 @@
               ? 'text-white hover:opacity-90'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed'
           ]"
-          :style="bookingStore.canGoNext && !bookingStore.loading ? { backgroundColor: primaryColor || '#4f46e5' } : {}"
+          :style="bookingStore.canGoNext && !bookingStore.loading ? { backgroundColor: primaryColor || '#721ad6' } : {}"
         >
           <span v-if="bookingStore.loading">
             <svg class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -199,11 +199,11 @@ window.addEventListener('message', (event) => {
 <style scoped>
 /* Allow custom primary color for progress bar */
 :deep(.bg-indigo-600) {
-  background-color: var(--progress-color, #4f46e5);
+  background-color: var(--progress-color, #721ad6);
 }
 
 :deep(.ring-indigo-100) {
-  --tw-ring-color: var(--progress-color, #4f46e5);
+  --tw-ring-color: var(--progress-color, #721ad6);
   --tw-ring-opacity: 0.2;
 }
 </style>

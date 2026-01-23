@@ -7,14 +7,9 @@
     <header v-if="!isEmbed" class="header-dark">
       <div class="max-w-5xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span class="text-white text-lg font-bold">S</span>
-            </div>
-            <div>
-              <h1 class="text-xl font-semibold text-white">sensëa Snoezelen</h1>
-              <p class="text-sm text-gray-400">Réservation de séance</p>
-            </div>
+          <div>
+            <span class="text-2xl font-logo text-white">sensëa</span>
+            <p class="text-sm text-gray-400">Réservation de séance</p>
           </div>
         </div>
       </div>

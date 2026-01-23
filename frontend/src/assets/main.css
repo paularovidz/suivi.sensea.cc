@@ -1,14 +1,104 @@
+/* ==========================================================================
+   FONTS
+   ========================================================================== */
+
+/* Amandine - Logo only (subset: sensëa) */
+@font-face {
+  font-family: 'Amandine';
+  src: url('/fonts/amandine-subset.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Syne - Titles */
+@font-face {
+  font-family: 'Syne';
+  src: url('/fonts/Syne-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Syne';
+  src: url('/fonts/Syne-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Syne';
+  src: url('/fonts/Syne-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Satoshi - Body Text */
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ==========================================================================
+   CSS CUSTOM PROPERTIES (Shared across all views)
+   ========================================================================== */
+
+:root {
+  /* Brand Colors */
+  --sensea-primary: #721ad6;
+  --sensea-primary-light: #9333ea;
+  --sensea-primary-dark: #5b14a8;
+
+  /* Gradients */
+  --sensea-gradient: linear-gradient(82.48deg, transparent -1.1%, rgba(114, 26, 214, 0.36) 96.45%);
+  --sensea-cta-gradient: linear-gradient(to right, var(--sensea-primary-light), var(--sensea-primary));
+
+  /* Typography */
+  --font-logo: 'Amandine', system-ui, sans-serif;
+  --font-heading: 'Syne', system-ui, sans-serif;
+  --font-body: 'Satoshi', system-ui, sans-serif;
+}
+
+/* ==========================================================================
+   TAILWIND
+   ========================================================================== */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Logo font utility */
+.font-logo {
+  font-family: 'Amandine', system-ui, sans-serif;
+}
+
 @layer base {
   html {
     @apply text-gray-100;
+    font-family: var(--font-body);
   }
 
   body {
     @apply min-h-screen bg-gray-900;
+  }
+
+  /* Headings use Syne */
+  h1, h2, h3 {
+    font-family: var(--font-heading);
   }
 }
 
@@ -18,7 +108,8 @@
   }
 
   .btn-primary {
-    @apply btn bg-gradient-to-r from-sensea-light to-sensea text-white hover:from-sensea hover:to-sensea-dark focus:ring-primary-500;
+    @apply btn text-white hover:opacity-90 focus:ring-sensea;
+    background: var(--sensea-cta-gradient);
   }
 
   .btn-secondary {
@@ -38,7 +129,7 @@
   }
 
   .input {
-    @apply w-full px-4 py-2 text-sm border border-gray-600 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow duration-200;
+    @apply w-full px-4 py-2 text-sm border border-gray-600 rounded-lg bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sensea focus:border-transparent transition-shadow duration-200;
   }
 
   select.input {
@@ -99,7 +190,7 @@
   }
 
   .badge-primary {
-    @apply badge bg-primary-100 text-primary-800;
+    @apply badge bg-purple-100 text-purple-800;
   }
 
   .badge-success {
@@ -140,7 +231,7 @@
   }
 
   .badge-proprioceptive {
-    @apply badge bg-indigo-100 text-indigo-800;
+    @apply badge bg-violet-100 text-violet-800;
   }
 
   .badge-vestibular {
@@ -166,11 +257,16 @@
 
 @layer utilities {
   .gradient-sensea {
-    @apply bg-gradient-to-r from-sensea-light to-sensea;
+    background: var(--sensea-cta-gradient);
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-sensea-light to-sensea;
+    @apply bg-clip-text text-transparent;
+    background: var(--sensea-cta-gradient);
+  }
+
+  .bg-sensea-gradient {
+    background: var(--sensea-gradient);
   }
 
   /* Dark mode background */
@@ -193,7 +289,7 @@
 
   /* Dark mode interactive card/button */
   .card-dark-interactive {
-    @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl transition-all hover:border-indigo-500/50 hover:bg-gray-800/70;
+    @apply bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl transition-all hover:border-sensea/50 hover:bg-gray-800/70;
   }
 
   /* Dark mode header */
@@ -203,7 +299,7 @@
 
   /* Dark mode input */
   .input-dark {
-    @apply w-full px-4 py-2 text-sm bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow duration-200;
+    @apply w-full px-4 py-2 text-sm bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sensea focus:border-transparent transition-shadow duration-200;
   }
 
   /* Dark mode badges */
@@ -225,7 +321,8 @@
 
   /* Dark mode button variants */
   .btn-dark-primary {
-    @apply btn bg-indigo-600 text-white hover:bg-indigo-500 focus:ring-indigo-500;
+    @apply btn text-white hover:opacity-90 focus:ring-sensea;
+    background: var(--sensea-cta-gradient);
   }
 
   .btn-dark-secondary {
