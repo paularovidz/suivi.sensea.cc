@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Base de données MariaDB
   db:
@@ -71,7 +69,7 @@ services:
     networks:
       - snoezelen_network
 
-  # Frontend Vue.js (dev server)
+  # Frontend Vue.js (dev server) - Dashboard admin
   frontend:
     build:
       context: ./frontend
@@ -87,6 +85,24 @@ services:
       - "5173:5173"
     depends_on:
       - api
+    networks:
+      - snoezelen_network
+
+  # Site vitrine Astro (www)
+  www:
+    build:
+      context: ./www
+      dockerfile: Dockerfile
+    container_name: snoezelen_www
+    restart: unless-stopped
+    environment:
+      # Hot reload sur macOS/Windows
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./www:/app
+      - /app/node_modules
+    ports:
+      - "4321:4321"
     networks:
       - snoezelen_network
 

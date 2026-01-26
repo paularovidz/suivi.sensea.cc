@@ -8,7 +8,7 @@ Application de dashboard pour le suivi de séances Snoezelen (thérapie sensorie
 
 ```
 /
-├── api/                    # Backend PHP
+├── api/                    # Backend PHP (API REST)
 │   ├── config/            # Configuration (DB, mail, sécurité)
 │   ├── src/
 │   │   ├── Controllers/   # Contrôleurs API REST
@@ -19,15 +19,25 @@ Application de dashboard pour le suivi de séances Snoezelen (thérapie sensorie
 │   ├── migrations/        # Scripts SQL
 │   └── public/            # Point d'entrée (index.php)
 │
-└── frontend/              # Frontend VueJS 3
+├── frontend/              # Dashboard admin (VueJS 3)
+│   ├── src/
+│   │   ├── components/    # Composants réutilisables
+│   │   ├── views/         # Pages
+│   │   ├── stores/        # Pinia stores
+│   │   ├── router/        # Vue Router
+│   │   ├── services/      # Appels API
+│   │   └── composables/   # Logique réutilisable
+│   └── public/
+│
+└── www/                   # Site vitrine public (Astro)
     ├── src/
-    │   ├── components/    # Composants réutilisables
-    │   ├── views/         # Pages
-    │   ├── stores/        # Pinia stores
-    │   ├── router/        # Vue Router
-    │   ├── services/      # Appels API
-    │   └── composables/   # Logique réutilisable
-    └── public/
+    │   ├── content/       # Contenu Markdown/MDX (pages, blog, conseils)
+    │   ├── layouts/       # Layouts et composants Astro
+    │   ├── styles/        # CSS (Tailwind)
+    │   ├── config/        # Configuration site (menu, theme, i18n)
+    │   └── lib/           # Utilitaires
+    ├── public/            # Assets statiques
+    └── dist/              # Build de production
 ```
 
 ## Modèle de données
@@ -397,20 +407,28 @@ Le modèle Session représente tout le cycle de vie d'un rendez-vous :
 
 ## Stack Technique
 
-### Backend
+### Backend (api/)
 - PHP 8.2+
 - PDO MySQL/MariaDB
 - Composer pour dépendances
 - PHPMailer pour emails
 - firebase/php-jwt pour JWT
 
-### Frontend
+### Dashboard Admin (frontend/)
 - Vue 3 + Composition API
 - Vite
 - Pinia (store)
 - Vue Router
 - Tailwind CSS
 - Axios
+
+### Site Vitrine (www/)
+- Astro 5.x (SSG - Static Site Generation)
+- React (composants interactifs)
+- Tailwind CSS 4.x
+- MDX pour le contenu
+- Preline UI (composants)
+- i18n (multilingue, défaut: français)
 
 ## Variables d'environnement
 
@@ -460,17 +478,34 @@ VITE_API_URL=https://suivi.sensea.cc/api
 ## Commandes utiles
 
 ```bash
-# Backend
+# Backend (api/)
 cd api && composer install
 php migrations/migrate.php
 
-# Frontend
+# Dashboard Admin (frontend/)
 cd frontend && npm install
 npm run dev      # Développement
 npm run build    # Production
+
+# Site Vitrine (www/)
+cd www && yarn install
+yarn dev         # Développement (port 4321)
+yarn build       # Production (génère dist/)
+yarn preview     # Prévisualiser le build
 ```
 
 ## Docker
+
+### Services disponibles
+
+| Service | Container | Port | Description |
+|---------|-----------|------|-------------|
+| db | snoezelen_db | 3306 | MariaDB 10.11 |
+| api | snoezelen_api | 8080 | API PHP (Apache) |
+| frontend | snoezelen_frontend | 5173 | Dashboard Vue.js (Vite dev) |
+| www | snoezelen_www | 4321 | Site vitrine Astro (dev) |
+| mailhog | snoezelen_mailhog | 8025 | Interface emails de test |
+| phpmyadmin | snoezelen_phpmyadmin | 8081 | Gestion BDD |
 
 ### Démarrage
 ```bash
@@ -505,14 +540,21 @@ docker exec snoezelen_api php /var/www/html/database/seed.php --clean
 
 ### Autres commandes utiles
 ```bash
-# Logs
+# Logs par service
 docker compose logs -f api
+docker compose logs -f www
+docker compose logs -f frontend
 
-# Accès shell container API
+# Accès shell containers
 docker exec -it snoezelen_api bash
+docker exec -it snoezelen_www sh
+docker exec -it snoezelen_frontend sh
 
 # Rebuild après modification Dockerfile
 docker compose up -d --build
+
+# Rebuild un service spécifique
+docker compose up -d --build www
 ```
 
 ## Système de Réservation (Booking)
@@ -652,3 +694,62 @@ Intégration OVH SMS avec signature API. Envoi rappels, confirmations, annulatio
 
 ### CaptchaService
 Vérification hCaptcha ou reCAPTCHA invisible.
+
+## Déploiement
+
+### URLs de production
+| Service | URL |
+|---------|-----|
+| Site vitrine | https://sensea.cc |
+| Dashboard admin | https://suivi.sensea.cc |
+| API | https://suivi.sensea.cc/api |
+
+### Site vitrine (www/)
+
+**Hébergement** : Netlify ou Vercel (SSG - fichiers statiques)
+
+**Build** :
+```bash
+cd www
+yarn build       # Génère dist/
+```
+
+**Configuration Netlify** (`www/netlify.toml`) :
+- Build command: `yarn build`
+- Publish directory: `dist`
+- Node version: 22
+- Cache headers pour assets
+
+**Configuration Vercel** (`www/vercel.json`) :
+- Build command: `sh vercel.sh`
+- Trailing slash activé
+- Redirect sitemap.xml → sitemap-index.xml
+
+### Dashboard et API (frontend/, api/)
+
+**Hébergement** : Serveur avec Docker ou configuration Apache/Nginx
+
+**Production** :
+```bash
+# Frontend - Build
+cd frontend && npm run build
+# Génère dist/ à servir via Nginx/Apache
+
+# API - Configuration Apache
+# DocumentRoot: /var/www/html/public
+# AllowOverride All (pour .htaccess)
+```
+
+### Variables d'environnement de production
+
+Voir section "Variables d'environnement" plus haut. Points critiques :
+- `ENV=production`
+- `DEBUG=false`
+- Secrets JWT et ENCRYPTION_KEY uniques et sécurisés
+- CORS configuré pour le domaine frontend uniquement
+
+### Documentation complète
+
+- **Setup serveur** : voir `docs/SETUP_SERVER.md`
+- **GitHub Actions CI/CD** : voir `docs/DEPLOY.md`
+- **Workflow** : `.github/workflows/deploy.yml`

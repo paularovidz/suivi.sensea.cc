@@ -37,3 +37,8 @@ logs/
 # Temporary files
 *.tmp
 tmp/
+
+# Deploy secrets
+deploy/.env*
+deploy/*.key
+deploy/*.pem
