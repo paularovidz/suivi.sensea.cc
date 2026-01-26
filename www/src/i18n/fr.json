@@ -1,0 +1,30 @@
+{
+  "common": {
+    "read_more": "Lire la suite",
+    "category": "Catégorie",
+    "published_on": "Publié le",
+    "learn_more_about": "En savoir plus sur",
+    "email_placeholder": "Adresse e-mail",
+    "pagination_next": "Suivant",
+    "pagination_previous": "Précédent",
+    "about": "À propos de",
+    "learn_more": "En savoir plus"
+  },
+  "navigation": {
+    "button_label": "Ouverture en août"
+  },
+  "sens": {
+    "related_comprendre_sens_section_title": "Vous pourriez être **intéressé par**",
+    "back_to_comprendre_sens": "Parcourir",
+    "section_title": "Vous pourriez être **intéressé par**",
+    "back": "Retour"
+  },
+  "footer": {
+    "quick_links": "Liens rapides",
+    "legal": "Juridique",
+    "resources": "Ressources",
+    "description": "sensëa est une salle multi-sensorielle basée à Audruicq. Fondée par Céline Delcloy, éducatrice spécialisée libéral depuis 2023 et formée par Pétrarque, redécouvrez vos sens et profitez d'une bulle de paix lors de séances adaptées à tous et toutes.",
+    "copyright": "Copyright {{ year }}",
+    "_comment": ""
+  }
+}

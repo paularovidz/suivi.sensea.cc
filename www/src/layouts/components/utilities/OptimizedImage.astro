@@ -1,0 +1,189 @@
+---
+/**
+ * CleanImage component - Remplace OptimizedImage avec des URLs propres sans hash
+ * Utilise des images pré-générées dans /public avec WebP, AVIF et tailles responsives
+ */
+
+interface Props {
+  src: string;
+  alt?: string;
+  class?: string;
+  width?: number;
+  height?: number;
+  loading?: "eager" | "lazy";
+  fetchpriority?: "high" | "auto" | "low";
+  decoding?: "async" | "auto" | "sync";
+  sizes?: string;
+  inlineSvg?: boolean;
+  style?: any;
+  [key: string]: any;
+}
+
+const { 
+  src, 
+  alt = "", 
+  class: className = "",
+  width,
+  height,
+  loading = "lazy",
+  fetchpriority = "auto",
+  decoding = "async",
+  sizes,
+  inlineSvg = false,
+  style,
+  ...rest
+} = Astro.props;
+
+// Variables pour déterminer le type d'image
+let isRemoteImage = src.startsWith("http://") || src.startsWith("https://");
+let svgContent = "";
+let shouldUseRemoteImage = false;
+
+// Gestion des SVG inline (simplifiée)
+if (inlineSvg && src.includes(".svg")) {
+  try {
+    const imagesRaw = import.meta.glob(
+      [
+        "/src/assets/images/**/*.svg",
+        "/src/content/**/*.svg",
+        "/public/images/**/*.svg",
+      ],
+      {
+        query: "raw",
+        import: "default",
+      },
+    );
+
+    const key = Object.keys(imagesRaw).find((k) => k.includes(src));
+    if (key) {
+      svgContent = await imagesRaw[key]() as string;
+    }
+  } catch (error) {
+    console.warn(`Erreur SVG inline: ${error}`);
+  }
+}
+
+// Gestion des SVG normaux (non-inline)
+if (src.includes(".svg") && !inlineSvg) {
+  // Pour les SVG, on utilise directement l'image source
+  // Pas besoin de variantes WebP/AVIF
+  shouldUseRemoteImage = true;
+}
+
+// Gestion des images distantes et SVG
+if (isRemoteImage || src.includes(".svg")) {
+  shouldUseRemoteImage = true;
+}
+
+// Images locales : utiliser notre système CleanImage
+// Extraire le nom de base et l'extension
+const pathParts = src.split('/');
+const fileName = pathParts[pathParts.length - 1];
+const baseName = fileName.split('.')[0];
+const originalExt = fileName.split('.').pop();
+
+// Détecter si on est en mode dev ou production
+const isDev = import.meta.env.DEV;
+
+// En dev : utiliser les images sources
+// En production : utiliser les variantes optimisées
+let imageSrc, webpSrcset, avifSrcset, originalSrcset;
+
+if (isDev) {
+  // Mode dev : utiliser l'image source directement
+  imageSrc = src;
+  webpSrcset = "";
+  avifSrcset = "";
+  originalSrcset = "";
+} else {
+           // Mode production : utiliser les variantes optimisées
+         // Construire le chemin vers l'image dans /public
+         let publicPath;
+         if (src.startsWith('/images/')) {
+           // Si l'image est déjà dans /images, préserver la structure des dossiers
+           // Ex: /images/why-us/concentrer-essentiel.png -> /images/why-us
+           // Ex: /images/sens/gout.png -> /images/sens
+           // Ex: /images/logo.png -> /images
+           const imagePath = src.replace(/\.(jpg|jpeg|png|gif|webp|avif)$/, '');
+           // Extraire le dossier parent, pas le nom complet du fichier
+           const pathParts = imagePath.split('/');
+           if (pathParts.length > 2) {
+             // /images/why-us/concentrer-essentiel -> /images/why-us
+             publicPath = pathParts.slice(0, -1).join('/');
+           } else {
+             // /images/logo -> /images
+             publicPath = '/images';
+           }
+         } else {
+           // Pour les images qui ne sont pas dans /images, on garde la logique existante
+           // Ex: /src/assets/images/logo.png -> /images
+           publicPath = `/images`;
+         }
+
+  // Tailles responsives
+  const responsiveSizes = [640, 750, 828, 1080, 1200, 1920, 2048];
+
+  // Générer le srcset pour WebP
+  webpSrcset = responsiveSizes
+    .map((size: number) => `${publicPath}/${baseName}-${size}w.webp ${size}w`)
+    .join(', ');
+
+  // Générer le srcset pour AVIF
+  avifSrcset = responsiveSizes
+    .map((size: number) => `${publicPath}/${baseName}-${size}w.avif ${size}w`)
+    .join(', ');
+
+  // Générer le srcset pour l'image originale (fallback)
+  originalSrcset = responsiveSizes
+    .map((size: number) => `${publicPath}/${baseName}-${size}w.${originalExt} ${size}w`)
+    .join(', ');
+
+  // URL de l'image originale
+  imageSrc = `${publicPath}/${baseName}.${originalExt}`;
+}
+---
+
+{
+  // SVG inline
+  inlineSvg && svgContent ? (
+    <Fragment set:html={svgContent} />
+  ) : 
+  // Image distante
+  shouldUseRemoteImage ? (
+    <img
+      src={src}
+      alt={alt}
+      class={className}
+      width={width}
+      height={height}
+      loading={loading}
+      fetchpriority={fetchpriority}
+      decoding={decoding}
+      style={style}
+      {...rest}
+    />
+  ) : (
+    <picture>
+      <source 
+        type="image/webp" 
+        srcset={webpSrcset}
+        sizes={sizes}
+      />
+      
+      <img
+        src={imageSrc}
+        srcset={originalSrcset}
+        alt={alt}
+        class={className}
+        width={width}
+        height={height}
+        loading={loading}
+        fetchpriority={fetchpriority}
+        decoding={decoding}
+        sizes={sizes}
+        style={style}
+        {...rest}
+      />
+    </picture>
+  )
+}

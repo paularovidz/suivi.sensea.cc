@@ -1,0 +1,130 @@
+---
+import Base from "@/layouts/Base.astro";
+import dateFormat from "@/lib/utils/dateFormat";
+import { markdownify } from "@/lib/utils/textConverter";
+import { getCollectionCTM } from "@/lib/contentParser.astro";
+import {
+  supportedLanguages,
+  useTranslations,
+} from "@/lib/utils/languageParser.ts";
+import CallToAction from "@/layouts/components/sections/CallToAction.astro";
+import HomeBanner from "@/layouts/components/sections/HomeBanner.astro";
+import parseTomlToJson from "@/lib/utils/parseTomlToJson";
+import PricingSection from "@/layouts/components/sections/PricingSection.astro";
+import TestimonialSection from "@/layouts/components/sections/TestimonialSection.astro";
+import ItineraireSection from "@/layouts/components/sections/ItineraireSection.astro";
+import MapLocation from "@/layouts/components/sections/MapLocation.astro";
+
+// Configuration des itinéraires vers Audruicq
+// Coordonnées [latitude, longitude] et temps en minutes
+const itineraires: Record<string, { ville: string; temps: number; coords: [number, number] }> = {
+  "salle-snoezelen-calais": { ville: "Calais", temps: 20, coords: [50.9513, 1.8587] },
+  "salle-snoezelen-dunkerque": { ville: "Dunkerque", temps: 30, coords: [51.0343, 2.3768] },
+  "salle-snoezelen-boulogne-sur-mer": { ville: "Boulogne-sur-Mer", temps: 40, coords: [50.7264, 1.6147] },
+  "salle-snoezelen-saint-omer": { ville: "Saint-Omer", temps: 20, coords: [50.7500, 2.2500] },
+  "salle-snoezelen-ardres": { ville: "Ardres", temps: 10, coords: [50.8567, 1.9833] },
+  "salle-snoezelen-gravelines": { ville: "Gravelines", temps: 25, coords: [50.9864, 2.1286] },
+};
+
+// get static paths for all pages
+export async function getStaticPaths() {
+  const paths = await Promise.all(
+    supportedLanguages.map(async (lang) => {
+      const config = parseTomlToJson("./src/config/config.toml");
+      const { default_language, show_default_lang_in_url } =
+        config.settings.multilingual;
+
+      let pages = await getCollectionCTM("pages", lang.languageCode);
+
+      return pages.map((page) => ({
+        params: {
+          lang:
+            lang.languageCode === default_language && !show_default_lang_in_url
+              ? undefined
+              : lang.languageCode,
+          page: page.data?.custom_slug || page.slug.split("/").pop(),
+        },
+        props: {
+          page,
+        },
+      }));
+    }),
+  );
+
+  return paths.flat();
+}
+
+const { page } = Astro.props;
+const { big_title, h1, title, date, description, image, buttons } = page.data;
+const { Content } = await page.render();
+
+const t = await useTranslations(Astro.currentLocale as string);
+
+// Récupérer le slug de la page
+const pageSlug = page.data?.custom_slug || page.slug.split("/").pop();
+
+// Vérifier si c'est une page de localisation avec itinéraire
+const itineraireConfig = itineraires[pageSlug as string];
+const showItineraire = !!itineraireConfig;
+
+// Vérifier si c'est la page Audruicq (afficher la carte)
+const isAudruicqPage = pageSlug === "salle-snoezelen-audruicq";
+
+// Besoin de Leaflet sur les pages avec carte
+const needsLeaflet = showItineraire || isAudruicqPage;
+---
+
+<Base {...page.data}>
+  <section>
+    {big_title && (
+      <HomeBanner content={{ big_title, h1, title, description, image, buttons }} />
+    )}
+    
+    <div class={`container ${big_title ? 'pt-separator' : ''}`}>
+      <div class="has-video-modal mx-auto max-w-5xl" data-aos="fade-up-sm">
+        {!big_title && title && <h1 class="text-4xl" set:html={markdownify(title)} />}
+        <div class={`flex ${big_title ? '' : 'mt-8'}`}>
+          {
+            date && (
+              <div class="flex flex-col gap-y-4">
+                <p class="font-primary text-sm tracking-[.12em] opacity-60">
+                  {t("common.published_on")}
+                </p>
+                <p class="text-sm font-medium" set:html={dateFormat(date)} />
+              </div>
+            )
+          }
+        </div>
+        <div
+          class:list={[
+            "prose-styles lg:text-lg",
+            date ? "mt-10 md:mt-20" : "mt-5 md:mt-10",
+          ]}>
+          <Content />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {showItineraire && itineraireConfig && (
+    <ItineraireSection
+      ville={itineraireConfig.ville}
+      temps={itineraireConfig.temps}
+      coords={itineraireConfig.coords}
+    />
+  )}
+
+  {isAudruicqPage && <MapLocation />}
+
+  {big_title && <PricingSection />}
+  {big_title && <TestimonialSection />}
+
+  <CallToAction />
+</Base>
+
+{needsLeaflet && (
+  <>
+    <link rel="stylesheet" href="/leaflet/leaflet.css" />
+    <script is:inline src="/leaflet/leaflet.js"></script>
+  </>
+)}

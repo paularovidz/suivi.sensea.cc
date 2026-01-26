@@ -1,0 +1,275 @@
+---
+/**
+ * Composant ItineraireSection
+ * Affiche une section avec le temps de trajet et une carte entre une ville et Audruicq
+ *
+ * Props:
+ * - ville: nom de la ville (ex: "Calais")
+ * - temps: temps de trajet en minutes (ex: 20)
+ * - coords: coordonnées [lat, lng] de la ville
+ */
+
+type Props = {
+  ville: string;
+  temps: number;
+  coords: [number, number];
+};
+
+const { ville, temps, coords } = Astro.props;
+
+// Coordonnées de La Vieille Rue, Audruicq
+const audruicqCoords = [50.879210, 2.074658];
+
+// ID unique pour la carte
+const mapId = `map-${ville.toLowerCase().replace(/[^a-z]/g, '')}`;
+---
+
+<section class="py-16 md:py-24">
+  <div class="container">
+    <div class="mx-auto max-w-5xl">
+      <!-- Titre -->
+      <div class="mb-8 text-center" data-aos="fade-up">
+        <p class="text-secondary mb-2 text-sm font-medium uppercase tracking-wider">
+          Itinéraire
+        </p>
+        <h2 class="font-secondary text-3xl text-white md:text-4xl">
+          Votre espace multi-sensoriel à <span class="text-primary">{temps} minutes</span> de {ville}
+        </h2>
+      </div>
+
+      <!-- Carte -->
+      <div
+        class="map-itineraire-wrapper overflow-hidden rounded-2xl border border-border/30"
+        data-aos="fade-up"
+        data-aos-delay="100"
+      >
+        <div
+          id={mapId}
+          class="h-[300px] w-full md:h-[350px]"
+          data-ville={ville}
+          data-ville-lat={coords[0]}
+          data-ville-lng={coords[1]}
+          data-audruicq-lat={audruicqCoords[0]}
+          data-audruicq-lng={audruicqCoords[1]}
+        ></div>
+      </div>
+
+      <!-- Info complémentaire -->
+      <p class="mt-6 text-center text-default opacity-70" data-aos="fade-up" data-aos-delay="200">
+        Notre salle sensëa à Audruicq est facilement accessible depuis {ville} en voiture.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Style pour la carte - meilleur contraste pour accessibilité */
+  .map-itineraire-wrapper {
+    position: relative;
+  }
+
+  .map-itineraire-wrapper::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(114, 26, 214, 0.05) 0%,
+      rgba(114, 26, 214, 0.08) 100%
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .map-itineraire-wrapper > div {
+    filter: brightness(1.4) contrast(1.2);
+  }
+
+  /* Style du marqueur */
+  :global(.marker-itineraire) {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  :global(.marker-itineraire svg) {
+    filter: drop-shadow(0 4px 12px rgba(114, 26, 214, 0.6));
+  }
+
+  /* Style du popup */
+  :global(.leaflet-popup-content-wrapper) {
+    background: rgba(20, 15, 30, 0.95) !important;
+    border: 1px solid rgba(114, 26, 214, 0.3) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(114, 26, 214, 0.3) !important;
+  }
+
+  :global(.leaflet-popup-tip) {
+    background: rgba(20, 15, 30, 0.95) !important;
+  }
+
+  :global(.leaflet-popup-content) {
+    margin: 12px 16px !important;
+    color: #fff !important;
+  }
+
+  :global(.leaflet-control-attribution) {
+    background: rgba(20, 15, 30, 0.8) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 10px !important;
+  }
+
+  :global(.leaflet-control-attribution a) {
+    color: rgba(210, 153, 255, 0.7) !important;
+  }
+</style>
+
+<script>
+  function initItineraireMaps() {
+    // @ts-ignore
+    if (typeof L === 'undefined') return;
+
+    document.querySelectorAll('[id^="map-"]').forEach((mapEl) => {
+      const el = mapEl as HTMLElement;
+
+      // Éviter de réinitialiser
+      if (el.dataset.initialized === 'true') return;
+      el.dataset.initialized = 'true';
+
+      const villeLat = parseFloat(el.dataset.villeLat || '0');
+      const villeLng = parseFloat(el.dataset.villeLng || '0');
+      const audruicqLat = parseFloat(el.dataset.audruicqLat || '0');
+      const audruicqLng = parseFloat(el.dataset.audruicqLng || '0');
+      const villeName = el.dataset.ville || '';
+
+      // Calculer le centre et le zoom
+      const centerLat = (villeLat + audruicqLat) / 2;
+      const centerLng = (villeLng + audruicqLng) / 2;
+
+      // @ts-ignore
+      const map = L.map(el.id, {
+        scrollWheelZoom: false,
+        zoomControl: false,
+      }).setView([centerLat, centerLng], 11);
+
+      // @ts-ignore
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      // Tuiles CartoDB Dark Matter
+      // @ts-ignore
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OSM &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 19,
+      }).addTo(map);
+
+      // Récupérer l'itinéraire routier via OSRM
+      fetch(`https://router.project-osrm.org/route/v1/driving/${villeLng},${villeLat};${audruicqLng},${audruicqLat}?overview=full&geometries=geojson`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.routes && data.routes[0]) {
+            const routeCoords = data.routes[0].geometry.coordinates.map(
+              (coord: [number, number]) => [coord[1], coord[0]] // GeoJSON est [lng, lat], Leaflet veut [lat, lng]
+            );
+            // @ts-ignore
+            L.polyline(routeCoords, {
+              color: '#721ad6',
+              weight: 4,
+              opacity: 0.9,
+            }).addTo(map);
+          }
+        })
+        .catch(() => {
+          // Fallback: ligne droite si l'API échoue
+          // @ts-ignore
+          L.polyline([[villeLat, villeLng], [audruicqLat, audruicqLng]], {
+            color: '#721ad6',
+            weight: 3,
+            opacity: 0.8,
+            dashArray: '10, 10',
+          }).addTo(map);
+        });
+
+      // Marqueur ville de départ (plus petit, secondaire)
+      // @ts-ignore
+      const villeIcon = L.divIcon({
+        className: 'marker-itineraire',
+        html: `
+          <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 0C7.163 0 0 7.163 0 16c0 11.2 16 24 16 24s16-12.8 16-24C32 7.163 24.837 0 16 0z" fill="#D299FF"/>
+            <circle cx="16" cy="14" r="6" fill="white"/>
+          </svg>
+        `,
+        iconSize: [32, 40],
+        iconAnchor: [16, 40],
+        popupAnchor: [0, -40],
+      });
+
+      // @ts-ignore
+      L.marker([villeLat, villeLng], { icon: villeIcon })
+        .addTo(map)
+        .bindPopup(`<div style="text-align: center; font-family: sans-serif;">
+          <strong style="color: #D299FF;">${villeName}</strong>
+        </div>`, { closeButton: false });
+
+      // Marqueur Audruicq (principal)
+      // @ts-ignore
+      const audruicqIcon = L.divIcon({
+        className: 'marker-itineraire',
+        html: `
+          <div style="position: relative;">
+            <div style="
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 50px;
+              height: 50px;
+              background: rgba(114, 26, 214, 0.3);
+              border-radius: 50%;
+              animation: pulse-itineraire 2s infinite;
+            "></div>
+            <svg width="40" height="50" viewBox="0 0 48 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="position: relative; z-index: 10;">
+              <path d="M24 0C10.745 0 0 10.745 0 24c0 16.8 24 36 24 36s24-19.2 24-36C48 10.745 37.255 0 24 0z" fill="#721ad6"/>
+              <circle cx="24" cy="22" r="10" fill="white"/>
+              <circle cx="24" cy="22" r="5" fill="#721ad6"/>
+            </svg>
+          </div>
+          <style>
+            @keyframes pulse-itineraire {
+              0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+              50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+              100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+            }
+          </style>
+        `,
+        iconSize: [40, 50],
+        iconAnchor: [20, 50],
+        popupAnchor: [0, -50],
+      });
+
+      // @ts-ignore
+      L.marker([audruicqLat, audruicqLng], { icon: audruicqIcon })
+        .addTo(map)
+        .bindPopup(`<div style="text-align: center; font-family: sans-serif;">
+          <strong style="color: #D299FF; font-size: 1.1em;">sensëa</strong><br>
+          <span style="color: #fff; opacity: 0.9;">Audruicq</span>
+        </div>`, { closeButton: false });
+
+      // Ajuster la vue pour montrer les deux points
+      // @ts-ignore
+      map.fitBounds([[villeLat, villeLng], [audruicqLat, audruicqLng]], {
+        padding: [50, 50],
+        maxZoom: 12,
+      });
+    });
+  }
+
+  // Initialiser quand Leaflet est chargé
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(initItineraireMaps, 100);
+    });
+  } else {
+    setTimeout(initItineraireMaps, 100);
+  }
+</script>

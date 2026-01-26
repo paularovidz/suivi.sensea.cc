@@ -1,0 +1,31 @@
+---
+import { getLocaleUrlCTM } from "@/lib/utils/languageParser.ts";
+
+const { navigation_button, navigation_button_label } = Astro.props;
+---
+
+<div
+  {...{
+    // Set `rel` attribute for external urls or use provided value
+    rel: navigation_button.url?.startsWith("http")
+      ? navigation_button.rel || "noopener noreferrer"
+      : navigation_button.rel || undefined,
+
+    // Set `target` to "_blank" for external urls unless otherwise specified
+    target: navigation_button.url?.startsWith("http")
+      ? navigation_button.target || "_blank"
+      : navigation_button.target || undefined,
+  }}
+  class="relative flex items-center">
+  <button
+    data-tf-popup="EjSgPPjE"
+    data-tf-iframe-props="title=Contact sensëa"
+    data-tf-medium="snippet"
+    data-tf-size="90"
+    class:list={[
+      "btn btn-primary has-text-flip-animation",
+    ]}
+    data-content={navigation_button_label}>
+    {navigation_button_label}
+    </button>
+</div>

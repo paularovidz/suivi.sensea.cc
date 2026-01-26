@@ -1,0 +1,72 @@
+---
+interface Props {
+  image?: string;
+  preloadLCP?: boolean;
+}
+
+const { image, preloadLCP = false } = Astro.props;
+
+// Si preloadLCP est activé et qu'une image est fournie, on ajoute le preload
+const shouldPreload = preloadLCP && image;
+
+// Générer l'URL propre vers l'image pré-générée
+let preloadUrl = image;
+let preloadSrcset = "";
+
+if (shouldPreload && image && !image.startsWith("http")) {
+  try {
+    // Extraire le nom de base et l'extension
+    const pathParts = image.split('/');
+    const fileName = pathParts[pathParts.length - 1];
+    const baseName = fileName.split('.')[0];
+    const originalExt = fileName.split('.').pop();
+    
+    // Construire le chemin vers l'image dans /public
+    let publicPath;
+             if (image.startsWith('/images/')) {
+           // Si l'image est déjà dans /images, préserver la structure des dossiers
+           // Ex: /images/why-us/concentrer-essentiel.png -> /images/why-us
+           // Ex: /images/sens/gout.png -> /images/sens
+           // Ex: /images/logo.png -> /images
+           const imagePath = image.replace(/\.(jpg|jpeg|png|gif|webp|avif)$/, '');
+           // Extraire le dossier parent, pas le nom complet du fichier
+           const pathParts = imagePath.split('/');
+           if (pathParts.length > 2) {
+             // /images/why-us/concentrer-essentiel -> /images/why-us
+             publicPath = pathParts.slice(0, -1).join('/');
+           } else {
+             // /images/logo -> /images
+             publicPath = '/images';
+           }
+         } else {
+           // Pour les images qui ne sont pas dans /images, on garde la logique existante
+           const imageDir = pathParts.slice(0, -1).join('/');
+           publicPath = `/images${imageDir ? '/' + imageDir : ''}`;
+         }
+    
+    // URL de l'image WebP (format moderne pour le preload)
+    preloadUrl = `${publicPath}/${baseName}.webp`;
+    
+    // Générer le srcset pour le preload responsive
+    const sizes = [640, 750, 828, 1080, 1200, 1920, 2048];
+    preloadSrcset = sizes
+      .map(size => `${publicPath}/${baseName}-${size}w.webp ${size}w`)
+      .join(', ');
+      
+  } catch (error) {
+    console.warn(`Erreur lors de la génération de l'URL LCP: ${error}`);
+  }
+}
+---
+
+{
+  shouldPreload && preloadUrl && (
+    <link
+      rel="preload"
+      as="image"
+      href={preloadUrl}
+      imagesrcset={preloadSrcset}
+      fetchpriority="high"
+    />
+  )
+}

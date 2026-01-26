@@ -1,0 +1,17 @@
+{
+  "main": [
+    {
+      "enable": true,
+      "label": "facebook",
+      "icon": "/images/icons/svg/facebook.svg",
+      "url": "#"
+    },
+    {
+      "enable": true,
+      "label": "instagram",
+      "icon": "/images/icons/svg/instagram.svg",
+      "url": "https://www.instagram.com/sensea_audruicq/",
+      "rel": "noopener noreferrer nofollow"
+    }
+  ]
+}

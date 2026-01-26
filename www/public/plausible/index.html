@@ -1,0 +1,57 @@
+<html class="h-full dark" lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plausible Analytics · Exclusion</title>
+<link rel="stylesheet" type="text/css" href="plausible-exclusion.css">
+<meta name="robots" content="noindex,follow">
+</head>
+
+<body class="flex flex-col h-full bg-gray-100 dark:bg-gray-900 items-center">
+	<div class="container text-center mt-24">
+		<h1 class="text-5xl font-black dark:text-gray-100">Plausible Exclude</h1>
+		<div class="my-4 text-xl dark:text-gray-100">Vous souhaitez ne plus être tracké par le site sensea.cc ?</div>
+		<div class="my-4 text-xl dark:text-gray-100">Actuellement, vous <span class="dark:text-green-400 text-green-600 font-bold"
+				id="plausible_not">acceptez</span><span class="dark:text-red-400 text-red-600 font-bold hidden" id="plausible_yes">refusez</span>
+			que vos visites soient comptabilisées.</div>
+		<a class="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 focus:ring-offset-indigo-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg"
+			id="plausible_button" href="javascript:toggleExclusion()">Exclure mes visites</a>
+
+		<a href="https://sensea.cc/mentions-legales/" class="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500 focus:ring-offset-indigo-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg">Revenir sur le site</a>
+	</div>
+
+	<script>
+		window.addEventListener('load', function (e) {
+			var exclusionState = window.localStorage.plausible_ignore == "true"
+
+			if (exclusionState) {
+				document.getElementById("plausible_not").classList.add('hidden')
+				document.getElementById("plausible_yes").classList.remove('hidden')
+				document.getElementById("plausible_button").innerHTML = 'Ne plus exclure mes visites'
+			} else {
+				document.getElementById("plausible_yes").classList.add('hidden')
+				document.getElementById("plausible_not").classList.remove('hidden')
+				document.getElementById("plausible_button").innerHTML = 'Exclure mes visites'
+			}
+		});
+
+		function toggleExclusion(e) {
+			var exclusionState = window.localStorage.plausible_ignore == "true"
+
+			if (exclusionState) {
+				delete window.localStorage.plausible_ignore
+				document.getElementById("plausible_yes").classList.add('hidden')
+				document.getElementById("plausible_not").classList.remove('hidden')
+				document.getElementById("plausible_button").innerHTML = 'Exclure mes visites'
+			} else {
+				window.localStorage.plausible_ignore = "true"
+				document.getElementById("plausible_not").classList.add('hidden')
+				document.getElementById("plausible_yes").classList.remove('hidden')
+				document.getElementById("plausible_button").innerHTML = 'Ne plus exclure mes visites'
+			}
+		}
+	</script>
+</body>
+
+</html>

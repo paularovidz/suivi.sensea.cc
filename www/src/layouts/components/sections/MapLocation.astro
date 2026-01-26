@@ -1,0 +1,196 @@
+---
+/**
+ * Composant MapLocation
+ * Affiche une carte avec la localisation de sensëa à Audruicq
+ */
+
+// Coordonnées de La Vieille Rue, Audruicq
+const audruicqCoords = [50.879210, 2.074658];
+---
+
+<section class="pt-16 md:pt-24">
+  <div class="container">
+    <div class="mx-auto max-w-5xl">
+      <!-- Titre -->
+      <div class="mb-8 text-center" data-aos="fade-up">
+        <p class="text-secondary mb-2 text-sm font-medium uppercase tracking-wider">
+          Localisation
+        </p>
+        <h2 class="font-secondary text-3xl text-white md:text-4xl">
+          Nous trouver à <span class="text-primary">Audruicq</span>
+        </h2>
+      </div>
+
+      <!-- Carte -->
+      <div
+        class="map-location-wrapper overflow-hidden rounded-2xl border border-border/30"
+        data-aos="fade-up"
+        data-aos-delay="100"
+      >
+        <div
+          id="map-location"
+          class="h-[350px] w-full md:h-[400px]"
+          data-lat={audruicqCoords[0]}
+          data-lng={audruicqCoords[1]}
+        ></div>
+      </div>
+
+      <!-- Info complémentaire -->
+      <div class="mt-8 text-center" data-aos="fade-up" data-aos-delay="200">
+        <p class="text-default opacity-70">
+          L'adresse définitive sera communiquée à l'ouverture de la salle Snoezelen.<br/>
+          À proximité de Calais, Saint-Omer, Dunkerque et Boulogne-sur-Mer.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Style pour la carte - meilleur contraste pour accessibilité */
+  .map-location-wrapper {
+    position: relative;
+  }
+
+  .map-location-wrapper::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(114, 26, 214, 0.05) 0%,
+      rgba(114, 26, 214, 0.08) 100%
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #map-location {
+    filter: brightness(1.4) contrast(1.2);
+  }
+
+  /* Style du marqueur */
+  :global(.marker-location) {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  :global(.marker-location svg) {
+    filter: drop-shadow(0 4px 12px rgba(114, 26, 214, 0.6));
+  }
+
+  /* Style du popup */
+  :global(.leaflet-popup-content-wrapper) {
+    background: rgba(20, 15, 30, 0.95) !important;
+    border: 1px solid rgba(114, 26, 214, 0.3) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(114, 26, 214, 0.3) !important;
+  }
+
+  :global(.leaflet-popup-tip) {
+    background: rgba(20, 15, 30, 0.95) !important;
+  }
+
+  :global(.leaflet-popup-content) {
+    margin: 12px 16px !important;
+    color: #fff !important;
+  }
+
+  :global(.leaflet-control-attribution) {
+    background: rgba(20, 15, 30, 0.8) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 10px !important;
+  }
+
+  :global(.leaflet-control-attribution a) {
+    color: rgba(210, 153, 255, 0.7) !important;
+  }
+</style>
+
+<script>
+  function initLocationMap() {
+    // @ts-ignore
+    if (typeof L === 'undefined') return;
+
+    const mapEl = document.getElementById('map-location') as HTMLElement;
+    if (!mapEl || mapEl.dataset.initialized === 'true') return;
+    mapEl.dataset.initialized = 'true';
+
+    const lat = parseFloat(mapEl.dataset.lat || '0');
+    const lng = parseFloat(mapEl.dataset.lng || '0');
+
+    // @ts-ignore
+    const map = L.map('map-location', {
+      scrollWheelZoom: false,
+      zoomControl: false,
+    }).setView([lat, lng], 10);
+
+    // @ts-ignore
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Tuiles CartoDB Dark Matter
+    // @ts-ignore
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Marqueur personnalisé
+    // @ts-ignore
+    const primaryIcon = L.divIcon({
+      className: 'marker-location',
+      html: `
+        <div style="position: relative;">
+          <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(114, 26, 214, 0.3);
+            border-radius: 50%;
+            animation: pulse-location 2s infinite;
+          "></div>
+          <svg width="48" height="60" viewBox="0 0 48 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="position: relative; z-index: 10;">
+            <path d="M24 0C10.745 0 0 10.745 0 24c0 16.8 24 36 24 36s24-19.2 24-36C48 10.745 37.255 0 24 0z" fill="#721ad6"/>
+            <circle cx="24" cy="22" r="10" fill="white"/>
+            <circle cx="24" cy="22" r="5" fill="#721ad6"/>
+          </svg>
+        </div>
+        <style>
+          @keyframes pulse-location {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+          }
+        </style>
+      `,
+      iconSize: [48, 60],
+      iconAnchor: [24, 60],
+      popupAnchor: [0, -60],
+    });
+
+    // @ts-ignore
+    const marker = L.marker([lat, lng], { icon: primaryIcon }).addTo(map);
+
+    marker.bindPopup(
+      `<div style="text-align: center; font-family: 'Satoshi', sans-serif;">
+        <strong style="color: #D299FF; font-size: 1.2em; letter-spacing: 0.05em;">sensëa</strong><br>
+        <span style="color: #fff; opacity: 0.9;">La Vieille Rue</span><br>
+        <span style="color: #fff; opacity: 0.9;">62370 Audruicq</span><br>
+        <span style="color: #D299FF; font-size: 0.85em; margin-top: 4px; display: inline-block;">Ouverture août 2026</span>
+      </div>`,
+      { closeButton: false }
+    );
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(initLocationMap, 100);
+    });
+  } else {
+    setTimeout(initLocationMap, 100);
+  }
+</script>

@@ -1,0 +1,85 @@
+---
+interface Props {
+  src: string;
+  alt?: string;
+  class?: string;
+  width?: number;
+  height?: number;
+  loading?: "eager" | "lazy";
+  fetchpriority?: "high" | "auto" | "low";
+  decoding?: "async" | "auto" | "sync";
+  sizes?: string;
+}
+
+const { 
+  src, 
+  alt = "", 
+  class: className = "",
+  width,
+  height,
+  loading = "lazy",
+  fetchpriority = "auto",
+  decoding = "async",
+  sizes
+} = Astro.props;
+
+// Extraire le nom de base et l'extension de l'image source
+const pathParts = src.split('/');
+const fileName = pathParts[pathParts.length - 1];
+const baseName = fileName.split('.')[0];
+const originalExt = fileName.split('.').pop();
+
+// Construire les chemins vers les variantes pré-générées
+const imageDir = pathParts.slice(0, -1).join('/');
+// Si le chemin commence déjà par /images, ne pas l'ajouter à nouveau
+let publicPath;
+if (src.startsWith('/images/')) {
+  // /images/author/celine-delcloy.png -> /images/author
+  publicPath = imageDir;
+} else {
+  // /author/celine-delcloy.png -> /images/author
+  publicPath = `/images${imageDir ? '/' + imageDir : ''}`;
+}
+
+// Tailles responsives
+const responsiveSizes = [640, 750, 828, 1080, 1200, 1920, 2048];
+
+// Générer le srcset pour WebP
+const webpSrcset = responsiveSizes
+  .map((size: number) => `${publicPath}/${baseName}-${size}w.webp ${size}w`)
+  .join(', ');
+
+// Générer le srcset pour AVIF
+//const avifSrcset = responsiveSizes
+//  .map((size: number) => `${publicPath}/${baseName}-${size}w.avif ${size}w`)
+//  .join(', ');
+
+// Générer le srcset pour l'image originale (fallback)
+const originalSrcset = responsiveSizes
+  .map((size: number) => `${publicPath}/${baseName}-${size}w.${originalExt} ${size}w`)
+  .join(', ');
+
+// URL de l'image originale
+const originalSrc = `${publicPath}/${baseName}.${originalExt}`;
+---
+
+<picture>  
+  <source 
+    type="image/webp" 
+    srcset={webpSrcset}
+    sizes={sizes}
+  />
+  
+  <img
+    src={originalSrc}
+    srcset={originalSrcset}
+    alt={alt}
+    class={className}
+    width={width}
+    height={height}
+    loading={loading}
+    fetchpriority={fetchpriority}
+    decoding={decoding}
+    sizes={sizes}
+  />
+</picture>

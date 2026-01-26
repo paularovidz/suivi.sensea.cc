@@ -1,0 +1,104 @@
+{
+  "main": [
+    {
+      "enable": true,
+      "name": "Comprendre",
+      "url": "/comprendre-sens/",
+      "weight": 1
+    },
+    {
+      "enable": true,
+      "name": "Nous trouver",
+      "url": "/salle-snoezelen-audruicq/",
+      "weight": 2
+    },
+    {
+      "enable": true,
+      "name": "Conseils",
+      "url": "/conseils/",
+      "weight": 3,
+      "badge": {
+        "enable": true,
+        "label": "Nouveau",
+        "color": "primary",
+        "_color_comment": "color expected value - primary, info, success, danger",
+        "type": "text",
+        "_type_comment": "type expected value - text, dot"
+      }
+    }
+  ],
+  "footer_menu": [
+    {
+      "enable": true,
+      "name": "Mentions légales",
+      "url": "/mentions-legales/",
+      "weight": 0
+    }
+  ],
+  "footer_menu_quick_link": [
+    {
+      "enable": true,
+      "name": "Salle snoezelen Calais",
+      "url": "/salle-snoezelen-calais/",
+      "weight": 0
+    },
+    {
+      "enable": true,
+      "name": "Salle snoezelen Dunkerque",
+      "url": "/salle-snoezelen-dunkerque/",
+      "weight": 0
+    },
+    {
+      "enable": true,
+      "name": "Salle snoezelen Boulogne-sur-mer",
+      "url": "/salle-snoezelen-boulogne-sur-mer/",
+      "weight": 0
+    },
+    {
+      "enable": true,
+      "name": "Salle snoezelen Saint-Omer",
+      "url": "/salle-snoezelen-saint-omer/",
+      "weight": 0
+    },
+    {
+      "enable": true,
+      "name": "Salle snoezelen Ardres",
+      "url": "/salle-snoezelen-ardres/",
+      "weight": 0
+    },
+    {
+      "enable": true,
+      "name": "Salle snoezelen Pas-de-Calais",
+      "url": "/salle-snoezelen-pas-de-calais/",
+      "weight": 0
+    }
+  ],
+  "footer_menu_resources": [
+    {
+      "enable": true,
+      "name": "Comprendre",
+      "url": "/comprendre-sens/",
+      "weight": 0
+    },
+    {
+      "enable": true,
+      "name": "Conseils",
+      "url": "/conseils/",
+      "weight": 0
+    },
+    {
+      "enable": true,
+      "name": "FAQ",
+      "url": "/faq/",
+      "weight": 0
+    }
+  ],
+  "footer_menu_legal": [
+    {
+      "enable": true,
+      "name": "Mentions légales",
+      "url": "/mentions-legales/",
+      "weight": 0
+    }
+  ]
+}
