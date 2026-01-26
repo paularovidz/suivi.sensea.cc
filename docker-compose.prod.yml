@@ -57,6 +57,21 @@ services:
     networks:
       - snoezelen_network
 
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: snoezelen_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASS}
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      - db
+    networks:
+      - snoezelen_network
+
 volumes:
   db_data:
 
