@@ -95,16 +95,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
-          cache-dependency-path: www/yarn.lock
+          cache: 'npm'
+          cache-dependency-path: www/package-lock.json
 
       - name: Install dependencies
         working-directory: www
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Build
         working-directory: www
-        run: yarn build
+        run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
