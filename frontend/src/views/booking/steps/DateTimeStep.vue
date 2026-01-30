@@ -7,9 +7,9 @@
 
     <!-- Session type and price info -->
     <div class="mb-6 p-4 bg-gray-700/30 border border-gray-600/50 rounded-lg">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between gap-3">
         <div class="flex items-center">
-          <svg class="w-5 h-5 text-indigo-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 text-indigo-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
@@ -17,14 +17,14 @@
             <p class="text-sm text-gray-400">{{ sessionTypeDescription }}</p>
           </div>
         </div>
-        <div class="text-right">
+        <div class="text-right flex-shrink-0">
           <!-- Prix avec promo -->
           <template v-if="bookingStore.hasPromoApplied">
-            <p class="text-lg text-gray-400 line-through">{{ formatPrice(bookingStore.originalPrice) }} &euro;</p>
-            <p class="text-2xl font-bold text-green-400">{{ formatPrice(bookingStore.currentPrice) }} &euro;</p>
+            <p class="text-sm text-gray-400 line-through">{{ formatPrice(bookingStore.originalPrice) }}&nbsp;&euro;</p>
+            <p class="text-lg font-bold text-green-400">{{ formatPrice(bookingStore.currentPrice) }}&nbsp;&euro;</p>
           </template>
           <template v-else>
-            <p class="text-2xl font-bold text-white">{{ formatPrice(bookingStore.currentPrice) }} &euro;</p>
+            <p class="text-lg font-bold text-white">{{ formatPrice(bookingStore.currentPrice) }}&nbsp;&euro;</p>
           </template>
           <p class="text-xs text-gray-400">par séance</p>
         </div>
