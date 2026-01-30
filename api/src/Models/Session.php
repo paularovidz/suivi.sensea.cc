@@ -337,8 +337,18 @@ class Session
         }
 
         if (!empty($filters['status'])) {
-            $where[] = 's.status = :status';
-            $params['status'] = $filters['status'];
+            if (is_array($filters['status'])) {
+                $placeholders = [];
+                foreach ($filters['status'] as $i => $status) {
+                    $key = 'status_' . $i;
+                    $placeholders[] = ':' . $key;
+                    $params[$key] = $status;
+                }
+                $where[] = 's.status IN (' . implode(', ', $placeholders) . ')';
+            } else {
+                $where[] = 's.status = :status';
+                $params['status'] = $filters['status'];
+            }
         }
 
         if (!empty($filters['date_from'])) {
@@ -436,8 +446,18 @@ class Session
         }
 
         if (!empty($filters['status'])) {
-            $where[] = 's.status = :status';
-            $params['status'] = $filters['status'];
+            if (is_array($filters['status'])) {
+                $placeholders = [];
+                foreach ($filters['status'] as $i => $status) {
+                    $key = 'status_' . $i;
+                    $placeholders[] = ':' . $key;
+                    $params[$key] = $status;
+                }
+                $where[] = 's.status IN (' . implode(', ', $placeholders) . ')';
+            } else {
+                $where[] = 's.status = :status';
+                $params['status'] = $filters['status'];
+            }
         }
 
         if (!empty($filters['person_id'])) {

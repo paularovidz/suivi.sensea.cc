@@ -349,6 +349,72 @@ VTIMEZONE;
     }
 
     /**
+     * Génère un calendrier ICS complet avec séances et jours off
+     */
+    public static function generateFullCalendar(array $bookings, array $offDays): string
+    {
+        $timezone = self::env('APP_TIMEZONE', 'Europe/Paris');
+        $host = parse_url(self::env('APP_URL', 'sensea.cc'), PHP_URL_HOST);
+
+        $lines = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//sensëa Snoezelen//Calendar//FR',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            'X-WR-CALNAME:sensëa Snoezelen',
+            'X-WR-TIMEZONE:' . $timezone,
+            '',
+            self::generateVTimezone($timezone),
+        ];
+
+        // Add bookings/sessions
+        foreach ($bookings as $booking) {
+            $startDate = new \DateTime($booking['session_date'], new \DateTimeZone($timezone));
+            $endDate = (clone $startDate)->modify("+{$booking['duration_blocked_minutes']} minutes");
+
+            $lines[] = '';
+            $lines[] = 'BEGIN:VEVENT';
+            $lines[] = 'UID:' . $booking['id'] . '@' . $host;
+            $lines[] = 'DTSTAMP:' . self::formatDateTime(new \DateTime('now', new \DateTimeZone('UTC')), true);
+            $lines[] = 'DTSTART;TZID=' . $timezone . ':' . self::formatDateTime($startDate);
+            $lines[] = 'DTEND;TZID=' . $timezone . ':' . self::formatDateTime($endDate);
+            $lines[] = 'SUMMARY:' . self::escapeValue(self::buildSummary($booking, $startDate));
+            $lines[] = 'DESCRIPTION:' . self::escapeValue(self::buildDescription($booking));
+            $lines[] = 'LOCATION:sensëa Snoezelen';
+            $lines[] = 'STATUS:CONFIRMED';
+            $lines[] = 'END:VEVENT';
+        }
+
+        // Add off days
+        foreach ($offDays as $offDay) {
+            $date = new \DateTime($offDay['date'], new \DateTimeZone($timezone));
+            $uid = 'off-' . $offDay['id'] . '@' . $host;
+
+            $summary = 'FERME';
+            if (!empty($offDay['reason'])) {
+                $summary .= ' - ' . $offDay['reason'];
+            }
+
+            $lines[] = '';
+            $lines[] = 'BEGIN:VEVENT';
+            $lines[] = 'UID:' . $uid;
+            $lines[] = 'DTSTAMP:' . self::formatDateTime(new \DateTime('now', new \DateTimeZone('UTC')), true);
+            $lines[] = 'DTSTART;VALUE=DATE:' . $date->format('Ymd');
+            $lines[] = 'DTEND;VALUE=DATE:' . (clone $date)->modify('+1 day')->format('Ymd');
+            $lines[] = 'SUMMARY:' . self::escapeValue($summary);
+            $lines[] = 'DESCRIPTION:Jour de fermeture sensëa';
+            $lines[] = 'TRANSP:TRANSPARENT';
+            $lines[] = 'STATUS:CONFIRMED';
+            $lines[] = 'END:VEVENT';
+        }
+
+        $lines[] = 'END:VCALENDAR';
+
+        return implode("\r\n", $lines);
+    }
+
+    /**
      * Génère un calendrier ICS pour les jours off (fermeture)
      */
     public static function generateOffDaysCalendar(array $offDays): string

@@ -34,7 +34,7 @@ use App\Controllers\SettingsController;
 use App\Controllers\DocumentController;
 use App\Controllers\PromoCodeController;
 use App\Controllers\OffDaysController;
-use App\Controllers\PublicOffDaysController;
+use App\Controllers\PublicCalendarController;
 use App\Utils\Response;
 
 // Error handling
@@ -159,7 +159,8 @@ $routes = [
     // ============================================
     // PUBLIC CALENDAR ROUTES (No authentication)
     // ============================================
-    'GET /public/calendar/off-days.ics' => ['controller' => PublicOffDaysController::class, 'method' => 'calendar'],
+    'GET /public/calendar/feed.ics' => ['controller' => PublicCalendarController::class, 'method' => 'feed'],
+    'GET /public/calendar/off-days.ics' => ['controller' => PublicCalendarController::class, 'method' => 'offDays'],
 
     // ============================================
     // PUBLIC BOOKING ROUTES (No authentication)

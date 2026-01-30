@@ -20,4 +20,12 @@ CREATE TABLE IF NOT EXISTS `off_days` (
     CONSTRAINT `fk_off_days_created_by` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- --------------------------------------------------------
+-- Setting pour le token du flux calendrier
+-- --------------------------------------------------------
+
+INSERT INTO `settings` (`key`, `value`, `type`, `label`, `description`, `category`) VALUES
+('calendar_feed_token', '', 'string', 'Token calendrier ICS', 'Token de sécurité pour le flux calendrier (laisser vide pour accès public)', 'calendar')
+ON DUPLICATE KEY UPDATE `key` = `key`;
+
 SET FOREIGN_KEY_CHECKS = 1;

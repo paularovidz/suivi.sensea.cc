@@ -241,7 +241,10 @@ export const offDaysApi = {
   getAll: () => api.get('/off-days'),
   create: (data) => api.post('/off-days', data),
   delete: (id) => api.delete(`/off-days/${id}`),
-  getIcsUrl: () => `${API_URL}/public/calendar/off-days.ics`
+  getCalendarFeedUrl: (token = '') => {
+    const baseUrl = `${API_URL}/public/calendar/feed.ics`
+    return token ? `${baseUrl}?token=${encodeURIComponent(token)}` : baseUrl
+  }
 }
 
 // Documents API (Admin - auth required)
