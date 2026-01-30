@@ -17,10 +17,12 @@
           </label>
           <input
             id="person-firstname"
+            ref="firstnameInput"
             v-model="bookingStore.newPerson.firstName"
             type="text"
             placeholder="Prénom de la personne"
             class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            @keyup.enter="focusLastname"
           />
         </div>
 
@@ -30,10 +32,12 @@
           </label>
           <input
             id="person-lastname"
+            ref="lastnameInput"
             v-model="bookingStore.newPerson.lastName"
             type="text"
             placeholder="Nom de la personne"
             class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            @keyup.enter="handleSubmitNewPerson"
           />
         </div>
       </div>
@@ -122,21 +126,25 @@
             <div>
               <label class="block text-sm font-medium text-gray-300 mb-1">Prénom</label>
               <input
+                ref="newPersonFirstnameInput"
                 v-model="bookingStore.newPerson.firstName"
                 type="text"
                 placeholder="Prénom"
                 class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 @input="clearPersonSelection"
+                @keyup.enter="focusNewPersonLastname"
               />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-300 mb-1">Nom</label>
               <input
+                ref="newPersonLastnameInput"
                 v-model="bookingStore.newPerson.lastName"
                 type="text"
                 placeholder="Nom"
                 class="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 @input="clearPersonSelection"
+                @keyup.enter="handleSubmitNewPerson"
               />
             </div>
           </div>
@@ -153,6 +161,12 @@ import { useBookingStore } from '@/stores/booking'
 const bookingStore = useBookingStore()
 
 const showNewPersonForm = ref(false)
+
+// Template refs for inputs
+const firstnameInput = ref(null)
+const lastnameInput = ref(null)
+const newPersonFirstnameInput = ref(null)
+const newPersonLastnameInput = ref(null)
 
 onMounted(() => {
   // If no persons found for existing client, show new person form
@@ -189,5 +203,20 @@ function toggleNewPerson() {
 
 function clearPersonSelection() {
   bookingStore.selectedPersonId = null
+}
+
+function handleSubmitNewPerson() {
+  // Only proceed if both fields are filled
+  if (bookingStore.newPerson.firstName?.trim() && bookingStore.newPerson.lastName?.trim()) {
+    bookingStore.nextStep()
+  }
+}
+
+function focusLastname() {
+  lastnameInput.value?.focus()
+}
+
+function focusNewPersonLastname() {
+  newPersonLastnameInput.value?.focus()
 }
 </script>
