@@ -94,6 +94,19 @@
       </div>
     </div>
 
+    <!-- No availability message -->
+    <div v-if="noAvailability" class="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+      <div class="flex items-start">
+        <svg class="w-5 h-5 text-amber-400 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <div>
+          <p class="text-amber-300 font-medium">Aucune disponibilité dans les {{ maxAdvanceDays }} prochains jours.</p>
+          <p class="text-sm text-gray-400 mt-1">Contactez-nous pour en savoir plus.</p>
+        </div>
+      </div>
+    </div>
+
     <div class="grid md:grid-cols-2 gap-6">
       <!-- Calendar -->
       <div>
@@ -166,6 +179,8 @@ const loadingDates = ref(false)
 const loadingSlots = ref(false)
 const showPromoInput = ref(false)
 const promoCodeValue = ref('')
+const noAvailability = ref(false)
+const initialLoading = ref(true)
 
 // Réinitialiser l'input quand le code promo est retiré
 watch(() => bookingStore.hasPromoApplied, (hasPromo, wasApplied) => {
@@ -192,6 +207,11 @@ const sessionTypeDescription = computed(() => {
   return bookingStore.durationType === 'discovery'
     ? 'Durée : 1h15 - Première séance pour découvrir l\'approche Snoezelen'
     : 'Durée : 45 min - Séance de suivi régulier'
+})
+
+const maxAdvanceDays = computed(() => {
+  const clientType = bookingStore.currentClientType
+  return bookingStore.bookingDelays[clientType] || 60
 })
 
 const formattedSelection = computed(() => {
@@ -221,7 +241,16 @@ onMounted(async () => {
     bookingStore.setDurationType(newType)
   }
 
+  initialLoading.value = true
+
   await fetchAvailableDates()
+
+  // Si aucune date dispo ce mois-ci, avancer automatiquement
+  if (bookingStore.availableDates.length === 0) {
+    await skipToFirstAvailableMonth()
+  }
+
+  initialLoading.value = false
 
   // Si une date est déjà sélectionnée (retour depuis l'étape 4), recharger les créneaux
   if (bookingStore.selectedDate) {
@@ -242,6 +271,37 @@ onMounted(async () => {
   }
 })
 
+async function skipToFirstAvailableMonth() {
+  const now = new Date()
+  const maxDate = new Date()
+  maxDate.setDate(maxDate.getDate() + maxAdvanceDays.value)
+  const maxYear = maxDate.getFullYear()
+  const maxMonth = maxDate.getMonth() + 1
+
+  let year = bookingStore.currentYear
+  let month = bookingStore.currentMonth
+
+  // Parcourir les mois suivants dans la fenêtre de réservation
+  while (true) {
+    month++
+    if (month > 12) {
+      month = 1
+      year++
+    }
+
+    // Dépassement de la fenêtre de réservation
+    if (year > maxYear || (year === maxYear && month > maxMonth)) {
+      noAvailability.value = true
+      return
+    }
+
+    const dates = await bookingStore.fetchAvailableDates(year, month)
+    if (dates && dates.length > 0) {
+      return
+    }
+  }
+}
+
 async function fetchAvailableDates() {
   loadingDates.value = true
   try {
@@ -255,6 +315,9 @@ async function handleMonthChange({ year, month }) {
   bookingStore.currentYear = year
   bookingStore.currentMonth = month
   await fetchAvailableDates()
+  if (bookingStore.availableDates.length > 0) {
+    noAvailability.value = false
+  }
 }
 
 async function selectDate(date) {
