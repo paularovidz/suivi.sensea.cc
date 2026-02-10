@@ -209,12 +209,21 @@ jobs:
           name: ops-frontend-dist
           path: ops-frontend-dist
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy docker-compose.prod.yml
+        run: |
+          scp -i ~/.ssh/deploy_key \
+            docker-compose.prod.yml \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/deploy/apps/snoezelen/
 
       - name: Deploy frontend
         run: |
